@@ -797,10 +797,8 @@ and 10 days after sending.</p></Card>}
  </div>
  {!fu?(
  <button onClick={()=>generate(lead)} disabled={generating===lead.id}
-className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white
-text-sm font-semibold py-2 rounded-lg">
- {generating===lead.id?"Writing...":"
- Generate Follow-up"}
+className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-semibold py-2 rounded-lg">
+ {generating===lead.id?"Writing...":"Generate Follow-up"}
  </button>
  ):(
  <div className="space-y-2">
