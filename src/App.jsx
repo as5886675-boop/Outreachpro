@@ -636,12 +636,8 @@ rows={10}/>
  {status==="sending"?" Sending...":status==="sent"?" Sent!":" Send Now"}
  </button>
  <button
-onClick={()=>window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURICo
-mponent(biz.email)}&su=${encodeURIComponent(email.subject)}&body=${encodeURICo
-mponent(email.body)}`,"_blank")} className="bg-blue-600 hover:bg-blue-500 text-white
-text-xs font-semibold py-2 rounded-lg"> Gmail</button>
- <button onClick={()=>navigator.clipboard.writeText(`Subject:
-${email.subject}\n\n${email.body}`)} className="bg-zinc-700 hover:bg-zinc-600 textwhite text-xs font-semibold py-2 rounded-lg"> Copy</button>
+onClick={()=>window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(biz.email)}&su=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`,"_blank")} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2 rounded-lg"> Gmail</button>
+ <button onClick={()=>navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${email.body}`)} className="bg-zinc-700 hover:bg-zinc-600 textwhite text-xs font-semibold py-2 rounded-lg"> Copy</button>
  <button
 onClick={()=>{track();setStatus("tracked");setTimeout(()=>setStatus(""),2000);}}
 className="col-span-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs fontsemibold py-2 rounded-lg">
