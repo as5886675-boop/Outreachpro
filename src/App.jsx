@@ -909,16 +909,13 @@ Date(l.sentAt).getTime())/86400000),fc=(l.followUps||[]).length;
  if(!auth) return <Onboarding onActivate={a=>{setAuth(a);store.auth.set(a);}}/>;
  const icons=[" "," "," "," "," "];
  return (
- <div className="min-h-screen bg-zinc-950 text-white pb-8" style={{fontFamily:"'DM
-Sans',sans-serif"}}>
+ <div className="min-h-screen bg-zinc-950 text-white pb-8" style={{fontFamily:"'DM Sans',sans-serif"}}>
  <link
-href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&d
-isplay=swap" rel="stylesheet"/>
+href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
  {/* Header */}
  <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 sticky top-0 z-10">
  <div className="max-w-lg mx-auto flex items-center gap-3">
- <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center
-text-sm font-bold shadow-md shadow-orange-500/30"> </div>
+ <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-sm font-bold shadow-md shadow-orange-500/30"> </div>
  <div className="flex-1 min-w-0">
  <h1 className="font-bold text-white text-base leading-tight">OutreachPro</h1>
  <p className="text-zinc-500 text-xs truncate">{auth.senderName} ·
