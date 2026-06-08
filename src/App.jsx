@@ -564,8 +564,7 @@ function ComposeEmail({leads,setLeads,auth}) {
  const generate=async()=>{
  const tmpl=getTemplate(biz.type);
  const
-base={subject:tmpl.subject(biz.name),body:tmpl.body(biz.name,biz.city,auth.senderNam
-e,auth.senderCity,demoUrl)};
+base={subject:tmpl.subject(biz.name),body:tmpl.body(biz.name,biz.city,auth.senderName,auth.senderCity,demoUrl)};
  if(!aiMode){setEmail(base);return;}
  setLoading(true);
  try{
