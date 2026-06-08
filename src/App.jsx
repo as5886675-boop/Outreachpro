@@ -139,7 +139,7 @@ function Onboarding({onActivate}) {
   const verifyAndFinish=async()=>{
     if(!f.senderName){setError("Enter your name.");return;}
     if(!f.senderCity){setError("Enter your city.");return;}
-    if(!f.apiKey.startsWith("sk-ant-")){setError("API key should start with sk-ant-");return;}
+    if (!f.apiKey || f.apiKey.length < 10){setError("YOUR GEMINI API KEY.");return;}
     setLoading(true);setError("");
     try{
       const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:10,messages:[{role:"user",content:"hi"}]})});
