@@ -805,8 +805,7 @@ className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-whi
  <div className="bg-zinc-900 rounded-lg p-3"><p className="text-zinc-500 textxs mb-1">Subject</p><p className="text-white text-xs">{fu.subject}</p></div>
  <div className="bg-zinc-900 rounded-lg p-3"><p className="text-zinc-500 textxs mb-1">Body</p><p className="text-zinc-300 text-xs whitespace-pre-wrap leadingrelaxed">{fu.body}</p></div>
  <button onClick={()=>sendFU(lead)} disabled={sending===lead.id} className="wfull bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm fontsemibold py-2 rounded-lg">
- {sending===lead.id?" Sending...":canAutoSend?" Send Now":" Open
-Gmail"}
+ {sending===lead.id?" Sending...":canAutoSend?" Send Now":" Open Gmail"}
  </button>
  </div>
  )}
