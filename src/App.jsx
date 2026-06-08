@@ -289,8 +289,7 @@ setStep("generating");setBatchLeads([]);setSendStatus({});setProgress(0);setGenP
  let bizList=[];
  if(csvMode){
  bizList=parseCsv();
- if(!bizList.length){setStep("idle");alert("No valid emails found.\nFormat: Name, email,
-city, type");return;}
+ if(!bizList.length){setStep("idle");alert("No valid emails found.\nFormat: Name, email, city, type");return;}
  } else {
  const remaining=Math.min(count,100);
  const batches=Math.ceil(remaining/MAX_LEADS_PER_BATCH);
