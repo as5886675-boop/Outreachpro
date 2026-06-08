@@ -110,8 +110,7 @@ function Tag({children,color="gray"}) {
 ${c[color]}`}>{children}</span>;
 }
 function Inp({label,value,onChange,placeholder,type="text",hint,rows}) {
- const cls="w-full bg-zinc-900 border border-zinc-700 focus:border-orange-500 text-white
-rounded-lg px-3 py-2 text-sm placeholder-zinc-600 outline-none transition-colors";
+ const cls="w-full bg-zinc-900 border border-zinc-700 focus:border-orange-500 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 outline-none transition-colors";
  return (
  <div>
  {label&&<label className="text-xs text-zinc-400 mb-1 block">{label}</label>}
