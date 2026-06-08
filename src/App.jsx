@@ -389,8 +389,7 @@ reset=()=>{setStep("idle");setBatchLeads([]);setSendStatus({});setProgress(0);se
  <div className="flex items-start justify-between">
  <div>
  <h2 className="text-lg font-semibold text-white">Email Blast</h2>
- <p className="text-zinc-400 text-sm mt-0.5">{canAutoSend?" Auto-send
-ready":" Add Resend key in Settings"}</p>
+ <p className="text-zinc-400 text-sm mt-0.5">{canAutoSend?" Auto-send ready":" Add Resend key in Settings"}</p>
  </div>
  <div className="text-right shrink-0">
  <p className="text-white font-bold text-sm">{dailySent}<span className="textzinc-500 font-normal">/{DAILY_LIMIT}</span></p>
