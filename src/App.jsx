@@ -615,8 +615,7 @@ placeholder="e.g. family business, 10 years old"/>
  <div className="flex gap-3">
  <button onClick={generate} disabled={!biz.name||loading} className="flex-1 bgorange-500 hover:bg-orange-400 disabled:opacity-40 text-white font-semibold py-2.5
 rounded-lg text-sm">
- {loading?"Generating...":"
- Generate Email"}
+ {loading?"Generating...": "Generate Email"}
  </button>
  <label className="flex items-center gap-2 cursor-pointer"
 onClick={()=>setAiMode(!aiMode)}>
