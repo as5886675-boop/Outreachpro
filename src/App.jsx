@@ -152,11 +152,8 @@ function Onboarding({onActivate}) {
  if(!f.senderName.trim()){setError("Enter your name.");return;}
  if(!f.senderCity.trim()){setError("Enter your city.");return;}
  if(!f.apiKey||f.apiKey.length<10){setError("Enter your Gemini API key from aistudio.google.com");return;}
- if(!f.resendKey||!f.resendKey.startsWith("re_")){setError("Enter your Resend API key (starts
-with re_)");return;}
- if(!f.fromEmail||!f.fromEmail.includes("@")){setError("Enter your from email (e.g. Akash
-Prism Studio <akash@clicknestonline.in>)");return;}
- onActivate({...f,mode:"local"});
+ if(!f.resendKey||!f.resendKey.startsWith("re_")){setError("Enter your Resend API key (starts with re_)");return;}
+ if(!f.fromEmail||!f.fromEmail.includes("@")){setError("Enter your from email (e.g. Akash Prism Studio <akash@clicknestonline.in>)");return;} onActivate({...f,mode:"local"});
  };
  if(step===0) return (
  <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-4
