@@ -5,7 +5,7 @@ const APP_VERSION = "7.0.0";
 const TABS = ["Send","Compose","Tracker","Follow-ups","Settings"];
 const MAX_LEADS_PER_BATCH = 20;
 // BUSINESS TYPES
-────────────────────────────────────────────────────────────
+
 const BUSINESS_TYPES = [
  { value:"clinic", label:"Clinic / Hospital" },
  { value:"restaurant", label:"Restaurant / Dhaba" },
@@ -45,7 +45,7 @@ function getTemplate(type) {
  return TEMPLATES[type] || TEMPLATES.default;
 }
 // STORAGE
-───────────────────────────────────────────────────────────────────
+
 const store = {
  auth: { get:()=>{try{const d=localStorage.getItem("op_auth");return
 d?JSON.parse(d):null}catch{return null}},
@@ -57,12 +57,11 @@ set:v=>{try{localStorage.setItem("op_leads",JSON.stringify(v))}catch{}} },
  get:()=>{try{return parseInt(localStorage.getItem("op_d_"+new
 Date().toDateString())||"0")}catch{return 0}},
  inc:n=>{try{const k="op_d_"+new
-Date().toDateString();localStorage.setItem(k,(parseInt(localStorage.getItem(k)||"0")+n))}cat
-ch{}},
+Date().toDateString();localStorage.setItem(k,(parseInt(localStorage.getItem(k)||"0")+n))}catch{}},
  },
 };
 // GEMINI AI
-─────────────────────────────────────────────────────────────────
+
 async function callAI(messages, auth) {
  if(!auth.apiKey) throw new Error("No Gemini API key. Add it in Settings.");
  const contents = messages.map(m=>({
@@ -80,7 +79,7 @@ flash:generateContent?key=${auth.apiKey}`,
  return {content:[{type:"text",text}]};
 }
 // EMAIL SENDER
-──────────────────────────────────────────────────────────────
+
 async function sendViaResend(auth, toEmail, subject, body) {
  const r = await fetch(SEND_URL,{
  method:"POST",
@@ -104,10 +103,9 @@ function parseJSON(data) {
  return JSON.parse(clean);
 }
 // SHARED UI
-─────────────────────────────────────────────────────────────────
+
 function Tag({children,color="gray"}) {
- const c={green:"bg-emerald-900/40 text-emerald-400 border-emerald-700",yellow:"bgamber-900/40 text-amber-400 border-amber-700",blue:"bg-blue-900/40 text-blue-400
-border-blue-700",orange:"bg-orange-900/40 text-orange-400 border-orange-700",red:"bgred-900/40 text-red-400 border-red-700",gray:"bg-zinc-800 text-zinc-400 border-zinc-600"};
+ const c={green:"bg-emerald-900/40 text-emerald-400 border-emerald-700",yellow:"bg-amber-900/40 text-amber-400 border-amber-700",blue:"bg-blue-900/40 text-blue-400 border-blue-700",orange:"bg-orange-900/40 text-orange-400 border-orange-700",red:"bg-red-900/40 text-red-400 border-red-700",gray:"bg-zinc-800 text-zinc-400 border-zinc-600"};
  return <span className={`text-xs px-2 py-0.5 rounded border
 ${c[color]}`}>{children}</span>;
 }
@@ -142,7 +140,7 @@ border-zinc-700 pb-2">{title}</p>
  );
 }
 // ONBOARDING
-────────────────────────────────────────────────────────────────
+
 function Onboarding({onActivate}) {
  const [step,setStep]=useState(0);
  const
@@ -258,7 +256,7 @@ browser</p>
  );
 }
 // SEND EMAILS
-───────────────────────────────────────────────────────────────
+
 function SendEmails({auth,setLeads}) {
  const [city,setCity]=useState("");
  const [type,setType]=useState("any");
@@ -566,7 +564,7 @@ font-semibold py-2.5 rounded-xl text-sm"> Start Fresh</button>
  );
 }
 // COMPOSE
-───────────────────────────────────────────────────────────────────
+
 function ComposeEmail({leads,setLeads,auth}) {
  const [biz,setBiz]=useState({name:"",type:"any",city:"",email:"",notes:""});
  const [email,setEmail]=useState({subject:"",body:""});
@@ -670,7 +668,7 @@ className="col-span-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs fon
  );
 }
 // TRACKER
-───────────────────────────────────────────────────────────────────
+
 function Tracker({leads,setLeads}) {
  const [filter,setFilter]=useState("all");
  const statuses=["sent","replied","interested","ignored","closed"];
@@ -742,7 +740,7 @@ with "{filter}" status</p>}
  );
 }
 // FOLLOW-UPS
-─────────────────────────────────────────────────────────────────
+
 function FollowUps({leads,setLeads,auth}) {
  const [generating,setGenerating]=useState(null);
  const [fuTexts,setFuTexts]=useState({});
@@ -854,7 +852,7 @@ ago</p></div>
  );
 }
 // SETTINGS
-──────────────────────────────────────────────────────────────────
+
 function Settings({auth,setAuth,leads,setLeads}) {
  const [form,setForm]=useState({...auth});
  const [saved,setSaved]=useState(false);
@@ -921,7 +919,7 @@ v{APP_VERSION}</p>
  );
 }
 // MAIN APP
-──────────────────────────────────────────────────────────────────
+
 export default function App() {
  const [auth,setAuth]=useState(null);
  const [activeTab,setActiveTab]=useState(0);
