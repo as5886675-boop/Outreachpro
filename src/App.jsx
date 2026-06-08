@@ -441,9 +441,7 @@ onChange={e=>setCount(parseInt(e.target.value))} className="w-full accent-orange
  <label className="text-xs text-zinc-400 mb-1 block">Paste leads — one per
 line</label>
  <textarea value={csvText} onChange={e=>setCsvText(e.target.value)} rows={6}
- placeholder={"Ekdant Dental, ekdant@gmail.com, Jalore, clinic\nSharma
-Restaurant, sharma@gmail.com, Jodhpur, restaurant\nRaj Coaching, raj@gmail.com,
-Barmer, school"}
+ placeholder={"Ekdant Dental, ekdant@gmail.com, Jalore, clinic\nSharma Restaurant, sharma@gmail.com, Jodhpur, restaurant\nRaj Coaching, raj@gmail.com, Barmer, school"}
  className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3
 py-2 text-sm placeholder-zinc-600 outline-none resize-none font-mono"/>
  <p className="text-zinc-600 text-xs mt-1">Format: Name, email, city, type</p>
