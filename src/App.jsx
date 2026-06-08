@@ -4,7 +4,7 @@ const SEND_URL = `${BACKEND_URL}/api/send-email`;
 const APP_VERSION = "7.0.0";
 const TABS = ["Send","Compose","Tracker","Follow-ups","Settings"];
 const MAX_LEADS_PER_BATCH = 20;
-// ── BUSINESS TYPES
+// BUSINESS TYPES
 ────────────────────────────────────────────────────────────
 const BUSINESS_TYPES = [
  { value:"clinic", label:"Clinic / Hospital" },
@@ -44,7 +44,7 @@ Web Designer | ${senderCity}`,
 function getTemplate(type) {
  return TEMPLATES[type] || TEMPLATES.default;
 }
-// ── STORAGE
+// STORAGE
 ───────────────────────────────────────────────────────────────────
 const store = {
  auth: { get:()=>{try{const d=localStorage.getItem("op_auth");return
@@ -61,7 +61,7 @@ Date().toDateString();localStorage.setItem(k,(parseInt(localStorage.getItem(k)||
 ch{}},
  },
 };
-// ── GEMINI AI
+// GEMINI AI
 ─────────────────────────────────────────────────────────────────
 async function callAI(messages, auth) {
  if(!auth.apiKey) throw new Error("No Gemini API key. Add it in Settings.");
@@ -79,7 +79,7 @@ flash:generateContent?key=${auth.apiKey}`,
  const text = data.candidates?.[0]?.content?.parts?.[0]?.text||"";
  return {content:[{type:"text",text}]};
 }
-// ── EMAIL SENDER
+// EMAIL SENDER
 ──────────────────────────────────────────────────────────────
 async function sendViaResend(auth, toEmail, subject, body) {
  const r = await fetch(SEND_URL,{
@@ -103,7 +103,7 @@ function parseJSON(data) {
  const clean = text.replace(/```json|```/g,"").trim();
  return JSON.parse(clean);
 }
-// ── SHARED UI
+// SHARED UI
 ─────────────────────────────────────────────────────────────────
 function Tag({children,color="gray"}) {
  const c={green:"bg-emerald-900/40 text-emerald-400 border-emerald-700",yellow:"bgamber-900/40 text-amber-400 border-amber-700",blue:"bg-blue-900/40 text-blue-400
@@ -141,7 +141,7 @@ border-zinc-700 pb-2">{title}</p>
  </div>
  );
 }
-// ── ONBOARDING
+// ONBOARDING
 ────────────────────────────────────────────────────────────────
 function Onboarding({onActivate}) {
  const [step,setStep]=useState(0);
@@ -257,7 +257,7 @@ browser</p>
  </div>
  );
 }
-// ── SEND EMAILS
+// SEND EMAILS
 ───────────────────────────────────────────────────────────────
 function SendEmails({auth,setLeads}) {
  const [city,setCity]=useState("");
@@ -565,7 +565,7 @@ font-semibold py-2.5 rounded-xl text-sm"> Start Fresh</button>
  </div>
  );
 }
-// ── COMPOSE
+// COMPOSE
 ───────────────────────────────────────────────────────────────────
 function ComposeEmail({leads,setLeads,auth}) {
  const [biz,setBiz]=useState({name:"",type:"any",city:"",email:"",notes:""});
@@ -669,7 +669,7 @@ className="col-span-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs fon
  </div>
  );
 }
-// ── TRACKER
+// TRACKER
 ───────────────────────────────────────────────────────────────────
 function Tracker({leads,setLeads}) {
  const [filter,setFilter]=useState("all");
@@ -741,7 +741,7 @@ with "{filter}" status</p>}
  </div>
  );
 }
-// ── FOLLOW-UPS
+// FOLLOW-UPS
 ─────────────────────────────────────────────────────────────────
 function FollowUps({leads,setLeads,auth}) {
  const [generating,setGenerating]=useState(null);
@@ -853,7 +853,7 @@ ago</p></div>
  </div>
  );
 }
-// ── SETTINGS
+// SETTINGS
 ──────────────────────────────────────────────────────────────────
 function Settings({auth,setAuth,leads,setLeads}) {
  const [form,setForm]=useState({...auth});
@@ -920,7 +920,7 @@ v{APP_VERSION}</p>
  </div>
  );
 }
-// ── MAIN APP
+// MAIN APP
 ──────────────────────────────────────────────────────────────────
 export default function App() {
  const [auth,setAuth]=useState(null);
