@@ -143,8 +143,7 @@ border-zinc-700 pb-2">{title}</p>
 function Onboarding({onActivate}) {
  const [step,setStep]=useState(0);
  const
-[f,setF]=useState({senderName:"",senderCity:"",demoUrl:"",apiKey:"",resendKey:"",fromEm
-ail:"}");
+[f,setF]=useState({senderName:"",senderCity:"",demoUrl:"",apiKey:"",resendKey:"",fromEm ail:"}");
  const up=k=>v=>setF(p=>({...p,[k]:v}));
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
