@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 // ── CONFIG — update BACKEND_URL after deploying backend to Vercel ─────────────
-const BACKEND_URL = ""; // e.g. "https://outreachpro-backend.vercel.app"
+const BACKEND_URL = "https://outreachpro-backend.vercel.app/";
 const CLAUDE_URL  = BACKEND_URL ? `${BACKEND_URL}/api/claude`     : "";
 const SEND_URL    = BACKEND_URL ? `${BACKEND_URL}/api/send-email` : "";
 const VALIDATE_URL= BACKEND_URL ? `${BACKEND_URL}/api/validate`   : "";
