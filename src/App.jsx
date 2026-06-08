@@ -431,8 +431,7 @@ text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 outline-none"/>
  </label>
  <input type="range" min="5" max="100" step="5" value={count}
 onChange={e=>setCount(parseInt(e.target.value))} className="w-full accent-orange500"/>
- <div className="flex justify-between text-zinc-600 text-xs mt1"><span>5</span><span>25</span><span>50</span><span>75</span><span>100</sp
-an></div>
+ <div className="flex justify-between text-zinc-600 text-xs mt1"><span>5</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
  {count>20&&<p className="text-amber-400 text-xs mt-1">
 {Math.ceil(count/20)} AI calls needed — takes ~{Math.ceil(count/20)*8}s</p>}
  </div>
