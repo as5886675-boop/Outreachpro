@@ -813,16 +813,13 @@ className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-whi
  );
  })}
 
-{leads.filter(l=>!needsFU.find(n=>n.id===l.id)&&!["ignored","closed"].includes(l.status)).len
-gth>0&&(
+{leads.filter(l=>!needsFU.find(n=>n.id===l.id)&&!["ignored","closed"].includes(l.status)).length>0&&(
  <div>
  <p className="text-xs text-zinc-500 mb-2 mt-2">Waiting (not due yet)</p>
 
-{leads.filter(l=>!needsFU.find(n=>n.id===l.id)&&!["ignored","closed"].includes(l.status)).ma
-p(lead=>(
+{leads.filter(l=>!needsFU.find(n=>n.id===l.id)&&!["ignored","closed"].includes(l.status)).map(lead=>(
  <div key={lead.id} className="bg-zinc-800/40 border border-zinc-700 rounded-xl p3 mb-2 flex items-center justify-between">
- <div><p className="text-white text-sm">{lead.name}</p><p className="textzinc-500 text-xs">{(lead.followUps||[]).length} follow-ups · {getDays(lead.sentAt)}d
-ago</p></div>
+ <div><p className="text-white text-sm">{lead.name}</p><p className="textzinc-500 text-xs">{(lead.followUps||[]).length} follow-ups · {getDays(lead.sentAt)}dago</p></div>
  <Tag color="gray">Waiting</Tag>
  </div>
  ))}
@@ -837,11 +834,8 @@ function Settings({auth,setAuth,leads,setLeads}) {
  const [form,setForm]=useState({...auth});
  const [saved,setSaved]=useState(false);
  const up=k=>v=>setForm(p=>({...p,[k]:v}));
- const
-save=()=>{setAuth(form);store.auth.set(form);setSaved(true);setTimeout(()=>setSaved(fals
-e),2500);};
- const clearLeads=()=>{if(!window.confirm("Delete ALL leads? This cannot be
-undone."))return;setLeads([]);store.leads.set([]);};
+ const save=()=>{setAuth(form);store.auth.set(form);setSaved(true);setTimeout(()=>setSaved(false),2500);};
+ const clearLeads=()=>{if(!window.confirm("Delete ALL leads? This cannot beundone."))return;setLeads([]);store.leads.set([]);};
  const autoSendReady=!!(form.resendKey&&form.fromEmail);
  return (
  <div className="space-y-5">
@@ -854,47 +848,37 @@ placeholder="Akash"/>
 placeholder="Jalore"/>
  </div>
  <Inp label="Demo Website URL" value={form.demoUrl||""} onChange={up("demoUrl")}
-placeholder="https://akashprismstudiodemo.netlify.app" hint="This link appears in every
-email you send to clients"/>
+placeholder="https://akashprismstudiodemo.netlify.app" hint="This link appears in every email you send to clients"/>
  </Box>
  <Box title="Gemini API Key (Free AI)">
  <Inp label="Gemini API Key" value={form.apiKey||""} onChange={up("apiKey")}
-placeholder="Paste your Gemini key here..." type="password" hint=" In browser only —
-get free key from aistudio.google.com"/>
+placeholder="Paste your Gemini key here..." type="password" hint=" In browser only — get free key from aistudio.google.com"/>
  </Box>
  <Box title="Email Auto-Send (Resend)">
  <div className={`flex items-center gap-2 rounded-lg px-3 py-2 border
 ${autoSendReady?"bg-emerald-900/20 border-emerald-700":"bg-zinc-900 border-zinc700"}`}>
  <span>{autoSendReady?" ":" "}</span>
- <p className="text-xs text-zinc-400">{autoSendReady?"Auto-send is active! Emails
-go from your domain.":"Add Resend key and From Email to enable auto-send."}</p>
+ <p className="text-xs text-zinc-400">{autoSendReady?"Auto-send is active! Emails go from your domain.":"Add Resend key and From Email to enable auto-send."}</p>
  </div>
  <Inp label="Resend API Key" value={form.resendKey||""} onChange={up("resendKey")}
 placeholder="re_xxxxxxxxxxxxxxxxx" type="password" hint="resend.com → API Keys"/>
  <Inp label="From Email" value={form.fromEmail||""} onChange={up("fromEmail")}
-placeholder="Akash Prism Studio <akash@clicknestonline.in>" hint="Must be verified
-domain in Resend"/>
+placeholder="Akash Prism Studio <akash@clicknestonline.in>" hint="Must be verified domain in Resend"/>
  </Box>
  <Box title="Data & Storage">
  <div className="flex items-center justify-between">
  <div><p className="text-white text-sm">{leads.length} leads saved</p><p
 className="text-zinc-500 text-xs">Stored in browser — stays after refresh</p></div>
- <button onClick={clearLeads} className="text-red-400 text-xs border border-red-800
-hover:border-red-600 px-3 py-1.5 rounded-lg transition-colors">Clear All</button>
+ <button onClick={clearLeads} className="text-red-400 text-xs border border-red-800 hover:border-red-600 px-3 py-1.5 rounded-lg transition-colors">Clear All</button>
  </div>
  </Box>
  <button onClick={save} className="w-full bg-orange-500 hover:bg-orange-400 textwhite font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
  {saved?" Settings Saved!":"Save Changes"}
  </button>
- <button onClick={()=>{if(window.confirm("Log out? Your leads will stay
-saved.")){store.auth.set(null);localStorage.removeItem("op_auth");window.location.reload(
-);}}}
- className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-medium py-2.5
-rounded-xl text-sm transition-colors">
- Log Out
+ <button onClick={()=>{if(window.confirm("Log out? Your leads will stay saved.")){store.auth.set(null);localStorage.removeItem("op_auth");window.location.reload();}}}
+ className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-medium py-2.5 rounded-xl text-sm transition-colors"> Log Out
  </button>
- <p className="text-zinc-700 text-xs text-center pb-4">OutreachPro
-v{APP_VERSION}</p>
+ <p className="text-zinc-700 text-xs text-center pb-4">OutreachPro v{APP_VERSION}</p>
  </div>
  );
 }
@@ -916,8 +900,7 @@ export default function App() {
  if(["ignored","closed"].includes(l.status))return false;
  const d=Math.floor((Date.now()-new
 Date(l.sentAt).getTime())/86400000),fc=(l.followUps||[]).length;
- return(fc===0&&d>=2)||(fc===1&&d>=5)||(fc===2&&d>=10);
- }).length;
+ return(fc===0&&d>=2)||(fc===1&&d>=5)||(fc===2&&d>=10);}).length;
  if(!ready) return (
  <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
  <div className="text-orange-500 text-4xl animate-pulse"> </div>
@@ -956,8 +939,7 @@ text-sm font-bold shadow-md shadow-orange-500/30"> </div>
  <span className="text-base leading-none">{icons[i]}</span>
  <span className="text-[10px]">{tab}</span>
  {tab==="Follow-ups"&&followUpsDue>0&&(
- <span className="absolute top-1 right-1 bg-orange-500 text-white text-[9px] w-3.5
-h-3.5 rounded-full flex items-center justify-center font-bold">{followUpsDue}</span>
+ <span className="absolute top-1 right-1 bg-orange-500 text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">{followUpsDue}</span>
  )}
  </button>
  ))}
