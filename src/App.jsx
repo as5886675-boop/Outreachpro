@@ -21,7 +21,7 @@ const BUSINESS_TYPES = [
 
 const TEMPLATES = {
   default: {
-    subject: n => `Professional Website for ${n} — Get Found Online`,
+    subject: n => `Professional Website for ${n} - Get Found Online`,
     body: (n,c,sender,senderCity,demo) =>
 `Hi,
 
@@ -30,14 +30,14 @@ I came across ${n} and noticed you don't have a website yet.
 Today, most customers search Google before visiting any business. Without a website, you may be losing customers to competitors who are easier to find online.
 
 I built a demo website that shows exactly what yours could look like:
-👉 ${demo||"https://yourdemo.netlify.app"}
+>> ${demo||"https://yourdemo.netlify.app"}
 
 It includes:
-• Mobile-friendly design
-• WhatsApp & contact integration
-• Google Maps & location
-• Services & business information
-• Professional look that builds trust
+- Mobile-friendly design
+- WhatsApp & contact integration
+- Google Maps & location
+- Services & business information
+- Professional look that builds trust
 
 You pay ONLY after the website is delivered. Zero advance payment.
 
@@ -152,16 +152,16 @@ function Onboarding({onActivate}) {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
       <div className="w-full max-w-sm space-y-5">
         <div className="text-center">
-          <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4 shadow-lg shadow-orange-500/20">⚡</div>
+          <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4 shadow-lg shadow-orange-500/20"></div>
           <h1 className="text-2xl font-bold text-white">OutreachPro</h1>
           <p className="text-zinc-400 text-sm mt-1">AI cold email system for web designers</p>
         </div>
         <div className="space-y-2">
           {[
-            ["🤖","AI generates leads for ANY business type"],
-            ["📧","Auto-sends from akash@clicknestonline.in"],
-            ["📊","Tracks all leads and replies"],
-            ["🔄","Auto follow-ups at 2, 5, 10 days"],
+            ["","AI generates leads for ANY business type"],
+            ["","Auto-sends from akash@clicknestonline.in"],
+            ["","Tracks all leads and replies"],
+            ["","Auto follow-ups at 2, 5, 10 days"],
           ].map(([icon,text])=>(
             <div key={text} className="flex items-center gap-3 bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3">
               <span className="text-xl">{icon}</span><p className="text-zinc-300 text-sm">{text}</p>
@@ -169,7 +169,7 @@ function Onboarding({onActivate}) {
           ))}
         </div>
         <button onClick={()=>setStep(1)} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-          Get Started →
+          Get Started -&gt;
         </button>
         <p className="text-zinc-700 text-xs text-center">OutreachPro v{APP_VERSION}</p>
       </div>
@@ -181,7 +181,7 @@ function Onboarding({onActivate}) {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
       <div className="w-full max-w-sm space-y-4">
         <div className="text-center mb-2">
-          <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-xl font-bold text-white mx-auto mb-2">⚡</div>
+          <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-xl font-bold text-white mx-auto mb-2"></div>
           <h1 className="text-xl font-bold text-white">Setup OutreachPro</h1>
         </div>
 
@@ -193,31 +193,21 @@ function Onboarding({onActivate}) {
           <Inp label="Demo Website URL" value={f.demoUrl} onChange={up("demoUrl")} placeholder="https://akashprismstudiodemo.netlify.app" hint="Clients see this in every email. Add later if needed."/>
         </Box>
 
-        <Box title="Gemini API Key (Free AI — No Cost)">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 space-y-1">
-            <p className="text-zinc-400 text-xs font-semibold">How to get FREE key:</p>
-            <p className="text-zinc-500 text-xs">1. Open <span className="text-orange-400">aistudio.google.com</span></p>
-            <p className="text-zinc-500 text-xs">2. Sign in with Google</p>
-            <p className="text-zinc-500 text-xs">3. Click "Get API Key" → "Create API Key"</p>
-            <p className="text-zinc-500 text-xs">4. Copy & paste below</p>
-            <p className="text-emerald-400 text-xs font-semibold">✅ 100% Free — 1,500 requests/day</p>
-          </div>
-          <Inp label="Gemini API Key *" value={f.apiKey} onChange={up("apiKey")} placeholder="Paste your key here..." type="password" hint="🔒 Stored only in your browser"/>
-        </Box>
+
 
         <Box title="Email Sending (Resend)">
           <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 space-y-1">
-            <p className="text-zinc-400 text-xs font-semibold">Your domain clicknestonline.in is verified ✅</p>
+            <p className="text-zinc-400 text-xs font-semibold">Your domain clicknestonline.in is verified </p>
             <p className="text-zinc-500 text-xs">Emails sent as: Akash Prism Studio &lt;akash@clicknestonline.in&gt;</p>
           </div>
-          <Inp label="Resend API Key *" value={f.resendKey} onChange={up("resendKey")} placeholder="re_xxxxxxxxxxxxxxxxx" type="password" hint="resend.com → API Keys → your key"/>
+          <Inp label="Resend API Key *" value={f.resendKey} onChange={up("resendKey")} placeholder="re_xxxxxxxxxxxxxxxxx" type="password" hint="resend.com -> API Keys -> your key"/>
           <Inp label="From Email *" value={f.fromEmail} onChange={up("fromEmail")} placeholder="Akash Prism Studio <akash@clicknestonline.in>"/>
         </Box>
 
         {error&&<div className="bg-red-900/20 border border-red-800 rounded-lg px-3 py-2"><p className="text-red-400 text-xs">{error}</p></div>}
 
         <button onClick={activate} disabled={loading} className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-          {loading?"Activating...":"Activate & Start →"}
+          {loading?"Activating...":"Activate & Start ->"}
         </button>
         <p className="text-zinc-600 text-xs text-center">All keys stored only in your browser</p>
       </div>
@@ -349,14 +339,14 @@ function SendEmails({auth,setLeads}) {
   };
 
   const reset=()=>{setStep("idle");setBatchLeads([]);setSendStatus({});setProgress(0);setTotalSent(0);setErrorMsg("");};
-  const icon={pending:"⏸",sending:"⏳",sent:"✅",error:"❌",skipped:"⏭"};
+  const icon={pending:"-",sending:"...",sent:"",error:"X",skipped:">>"};
 
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">Email Blast</h2>
-          <p className="text-zinc-400 text-sm mt-0.5">{canAutoSend?"✅ Auto-send ready":"⚠️ Add Resend key in Settings"}</p>
+          <p className="text-zinc-400 text-sm mt-0.5">{canAutoSend?" Auto-send ready":"! Add Resend key in Settings"}</p>
         </div>
         <div className="text-right shrink-0">
           <p className="text-white font-bold text-sm">{dailySent}<span className="text-zinc-500 font-normal">/{DAILY_LIMIT}</span></p>
@@ -364,15 +354,15 @@ function SendEmails({auth,setLeads}) {
         </div>
       </div>
 
-      {dailySent>=DAILY_LIMIT&&<Warn>⚠️ Daily limit reached. Resets at midnight.</Warn>}
-      {!auth.demoUrl&&<Warn>⚠️ No demo URL set — go to Settings to add it.</Warn>}
+      {dailySent>=DAILY_LIMIT&&<Warn>! Daily limit reached. Resets at midnight.</Warn>}
+      {!auth.demoUrl&&<Warn>! No demo URL set - go to Settings to add it.</Warn>}
       {errorMsg&&<div className="bg-red-900/20 border border-red-800 rounded-xl px-4 py-3"><p className="text-red-400 text-xs">{errorMsg}</p></div>}
 
       {(step==="idle"||step==="generating")&&(
         <>
           <div className="flex gap-2">
-            <button onClick={()=>setCsvMode(false)} className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${!csvMode?"bg-orange-500 border-orange-500 text-white":"bg-zinc-800 border-zinc-700 text-zinc-400"}`}>🤖 AI Generate</button>
-            <button onClick={()=>setCsvMode(true)} className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${csvMode?"bg-orange-500 border-orange-500 text-white":"bg-zinc-800 border-zinc-700 text-zinc-400"}`}>📋 Paste CSV</button>
+            <button onClick={()=>setCsvMode(false)} className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${!csvMode?"bg-orange-500 border-orange-500 text-white":"bg-zinc-800 border-zinc-700 text-zinc-400"}`}> AI Generate</button>
+            <button onClick={()=>setCsvMode(true)} className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${csvMode?"bg-orange-500 border-orange-500 text-white":"bg-zinc-800 border-zinc-700 text-zinc-400"}`}> Paste CSV</button>
           </div>
 
           {!csvMode?(
@@ -395,12 +385,12 @@ function SendEmails({auth,setLeads}) {
                 </label>
                 <input type="range" min="5" max="100" step="5" value={count} onChange={e=>setCount(parseInt(e.target.value))} className="w-full accent-orange-500"/>
                 <div className="flex justify-between text-zinc-600 text-xs mt-1"><span>5</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
-                {count>20&&<p className="text-amber-400 text-xs mt-1">⚠️ {Math.ceil(count/20)} AI calls needed — takes ~{Math.ceil(count/20)*8}s</p>}
+                {count>20&&<p className="text-amber-400 text-xs mt-1">! {Math.ceil(count/20)} AI calls needed - takes ~{Math.ceil(count/20)*8}s</p>}
               </div>
             </div>
           ):(
             <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Paste leads — one per line</label>
+              <label className="text-xs text-zinc-400 mb-1 block">Paste leads - one per line</label>
               <textarea value={csvText} onChange={e=>setCsvText(e.target.value)} rows={6}
                 placeholder={"Ekdant Dental, ekdant@gmail.com, Jalore, clinic\nSharma Restaurant, sharma@gmail.com, Jodhpur, restaurant\nRaj Coaching, raj@gmail.com, Barmer, school"}
                 className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 outline-none resize-none font-mono"/>
@@ -411,8 +401,8 @@ function SendEmails({auth,setLeads}) {
           <button onClick={run} disabled={step==="generating"||dailySent>=DAILY_LIMIT}
             className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
             {step==="generating"
-              ?<span className="flex items-center justify-center gap-2"><span className="animate-spin inline-block">⚙️</span>{genProgress>0?`Generating... ${genProgress}%`:"Starting AI..."}</span>
-              :`⚡ Generate ${count} Leads & Write Emails`}
+              ?<span className="flex items-center justify-center gap-2"><span className="animate-spin inline-block"></span>{genProgress>0?`Generating... ${genProgress}%`:"Starting AI..."}</span>
+              :` Generate ${count} Leads & Write Emails`}
           </button>
         </>
       )}
@@ -421,7 +411,7 @@ function SendEmails({auth,setLeads}) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-white font-semibold">{batchLeads.length} leads ready to send</p>
-            <button onClick={reset} className="text-zinc-500 text-xs hover:text-zinc-300">✕ Reset</button>
+            <button onClick={reset} className="text-zinc-500 text-xs hover:text-zinc-300">x Reset</button>
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {batchLeads.map((lead,i)=>(
@@ -429,7 +419,7 @@ function SendEmails({auth,setLeads}) {
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-medium truncate">{lead.name}</p>
                   <p className="text-zinc-400 text-xs truncate">{lead.email}</p>
-                  <p className="text-zinc-600 text-xs truncate">{lead.type} · {lead.city}</p>
+                  <p className="text-zinc-600 text-xs truncate">{lead.type} - {lead.city}</p>
                 </div>
                 <Tag>ready</Tag>
               </div>
@@ -438,11 +428,11 @@ function SendEmails({auth,setLeads}) {
           <div className="space-y-2">
             {canAutoSend&&(
               <button onClick={sendAll} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-                🚀 Auto-Send All {batchLeads.length} Emails
+                 Auto-Send All {batchLeads.length} Emails
               </button>
             )}
             <button onClick={openGmailAll} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm">
-              📧 Open Gmail for All {batchLeads.length}
+               Open Gmail for All {batchLeads.length}
             </button>
             {!canAutoSend&&<p className="text-zinc-600 text-xs text-center">Add Resend key in Settings for one-click auto-send.</p>}
           </div>
@@ -453,7 +443,7 @@ function SendEmails({auth,setLeads}) {
         <div className="space-y-4">
           <Card>
             <div className="text-center">
-              <div className="text-3xl mb-2 animate-bounce">📨</div>
+              <div className="text-3xl mb-2 animate-bounce"></div>
               <p className="text-white font-semibold">Sending emails...</p>
               <p className="text-zinc-400 text-sm mt-1">{Math.round(progress*batchLeads.length/100)} of {batchLeads.length} sent</p>
               <div className="mt-3 bg-zinc-700 rounded-full h-2.5"><div className="bg-orange-500 h-2.5 rounded-full transition-all duration-500" style={{width:`${progress}%`}}/></div>
@@ -463,7 +453,7 @@ function SendEmails({auth,setLeads}) {
           <div className="space-y-1.5 max-h-64 overflow-y-auto">
             {batchLeads.map((lead,i)=>(
               <div key={i} className="flex items-center gap-2 bg-zinc-800/50 rounded-lg px-3 py-2">
-                <span>{icon[sendStatus[i]]||"⏸"}</span>
+                <span>{icon[sendStatus[i]]||"-"}</span>
                 <p className="text-white text-xs flex-1 truncate">{lead.name}</p>
                 <p className="text-zinc-500 text-xs truncate max-w-[140px]">{lead.email}</p>
               </div>
@@ -476,7 +466,7 @@ function SendEmails({auth,setLeads}) {
         <div className="space-y-4">
           <Card>
             <div className="text-center">
-              <div className="text-4xl mb-2">🎉</div>
+              <div className="text-4xl mb-2"></div>
               <p className="text-white font-bold text-xl">{totalSent} emails sent!</p>
               <p className="text-zinc-400 text-sm mt-1">All added to your tracker automatically.</p>
               <div className="grid grid-cols-3 gap-2 mt-4">
@@ -495,8 +485,8 @@ function SendEmails({auth,setLeads}) {
               </div>
             ))}
           </div>
-          <button onClick={run} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2.5 rounded-xl text-sm">⚡ Generate Another Batch</button>
-          <button onClick={reset} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm">🔄 Start Fresh</button>
+          <button onClick={run} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2.5 rounded-xl text-sm"> Generate Another Batch</button>
+          <button onClick={reset} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm"> Start Fresh</button>
         </div>
       )}
     </div>
@@ -557,7 +547,7 @@ function ComposeEmail({leads,setLeads,auth}) {
       </div>
       <div className="flex gap-3">
         <button onClick={generate} disabled={!biz.name||loading} className="flex-1 bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-white font-semibold py-2.5 rounded-lg text-sm">
-          {loading?"Generating...":"✨ Generate Email"}
+          {loading?"Generating...":" Generate Email"}
         </button>
         <label className="flex items-center gap-2 cursor-pointer" onClick={()=>setAiMode(!aiMode)}>
           <div className={`w-10 h-5 rounded-full relative transition-colors ${aiMode?"bg-orange-500":"bg-zinc-600"}`}><div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${aiMode?"left-5":"left-0.5"}`}/></div>
@@ -571,12 +561,12 @@ function ComposeEmail({leads,setLeads,auth}) {
             <Inp label="Body" value={email.body} onChange={v=>setEmail(p=>({...p,body:v}))} rows={10}/>
             <div className="grid grid-cols-2 gap-2">
               <button onClick={sendNow} disabled={status==="sending"} className="col-span-2 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-bold py-2.5 rounded-lg">
-                {status==="sending"?"⏳ Sending...":status==="sent"?"✅ Sent!":"🚀 Send Now"}
+                {status==="sending"?"... Sending...":status==="sent"?" Sent!":" Send Now"}
               </button>
-              <button onClick={()=>window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(biz.email)}&su=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`,"_blank")} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2 rounded-lg">📧 Gmail</button>
-              <button onClick={()=>navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${email.body}`)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold py-2 rounded-lg">📋 Copy</button>
+              <button onClick={()=>window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(biz.email)}&su=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`,"_blank")} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2 rounded-lg"> Gmail</button>
+              <button onClick={()=>navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${email.body}`)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold py-2 rounded-lg"> Copy</button>
               <button onClick={()=>{track();setStatus("tracked");setTimeout(()=>setStatus(""),2000);}} className="col-span-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold py-2 rounded-lg">
-                {status==="tracked"?"✅ Tracked!":"📌 Mark Sent & Track"}
+                {status==="tracked"?" Tracked!":" Mark Sent & Track"}
               </button>
             </div>
           </div>
@@ -595,7 +585,7 @@ function Tracker({leads,setLeads}) {
 
   if(!leads.length) return (
     <div className="text-center py-16 text-zinc-500">
-      <div className="text-5xl mb-3">📭</div>
+      <div className="text-5xl mb-3"></div>
       <p className="text-sm font-medium text-zinc-400">No leads yet</p>
       <p className="text-xs mt-1">Send emails to start tracking</p>
     </div>
@@ -630,9 +620,9 @@ function Tracker({leads,setLeads}) {
                   <Tag color={statusColor[lead.status]||"gray"}>{lead.status}</Tag>
                 </div>
                 <p className="text-zinc-400 text-xs mt-0.5 truncate">{lead.email}</p>
-                <p className="text-zinc-600 text-xs">{new Date(lead.sentAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})} · {lead.type} · {(lead.followUps||[]).length} follow-ups</p>
+                <p className="text-zinc-600 text-xs">{new Date(lead.sentAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})} - {lead.type} - {(lead.followUps||[]).length} follow-ups</p>
               </div>
-              <button onClick={()=>{setLeads(p=>{const u=p.filter(l=>l.id!==lead.id);store.leads.set(u);return u;})}} className="text-zinc-600 hover:text-red-400 text-xs shrink-0">✕</button>
+              <button onClick={()=>{setLeads(p=>{const u=p.filter(l=>l.id!==lead.id);store.leads.set(u);return u;})}} className="text-zinc-600 hover:text-red-400 text-xs shrink-0">x</button>
             </div>
             <div className="flex gap-1.5 mt-3 flex-wrap">
               {statuses.map(s=>(
@@ -689,7 +679,7 @@ function FollowUps({leads,setLeads,auth}) {
 
   if(!leads.length) return (
     <div className="text-center py-16 text-zinc-500">
-      <div className="text-5xl mb-3">⏰</div>
+      <div className="text-5xl mb-3"></div>
       <p className="text-sm font-medium text-zinc-400">No leads yet</p>
       <p className="text-xs mt-1">Follow-up reminders appear at 2, 5, and 10 days.</p>
     </div>
@@ -701,7 +691,7 @@ function FollowUps({leads,setLeads,auth}) {
         <h2 className="text-lg font-semibold text-white">Follow-ups</h2>
         {needsFU.length>0&&<span className="bg-orange-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">{needsFU.length} due</span>}
       </div>
-      {!needsFU.length&&<Card><p className="text-zinc-400 text-sm text-center">✅ All caught up!</p><p className="text-zinc-500 text-xs text-center mt-1">Reminders at 2, 5, and 10 days after sending.</p></Card>}
+      {!needsFU.length&&<Card><p className="text-zinc-400 text-sm text-center"> All caught up!</p><p className="text-zinc-500 text-xs text-center mt-1">Reminders at 2, 5, and 10 days after sending.</p></Card>}
       {needsFU.map(lead=>{
         const fu=fuTexts[lead.id];const fuNum=(lead.followUps||[]).length+1;
         return (
@@ -710,20 +700,20 @@ function FollowUps({leads,setLeads,auth}) {
               <div>
                 <p className="font-semibold text-white text-sm">{lead.name}</p>
                 <p className="text-zinc-400 text-xs">{lead.email}</p>
-                <p className="text-orange-400 text-xs mt-0.5">Follow-up #{fuNum} · {getDays(lead.sentAt)} days ago</p>
+                <p className="text-orange-400 text-xs mt-0.5">Follow-up #{fuNum} - {getDays(lead.sentAt)} days ago</p>
               </div>
               <Tag color="yellow">Due</Tag>
             </div>
             {!fu?(
               <button onClick={()=>generate(lead)} disabled={generating===lead.id} className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-semibold py-2 rounded-lg">
-                {generating===lead.id?"Writing...":"✨ Generate Follow-up"}
+                {generating===lead.id?"Writing...":" Generate Follow-up"}
               </button>
             ):(
               <div className="space-y-2">
                 <div className="bg-zinc-900 rounded-lg p-3"><p className="text-zinc-500 text-xs mb-1">Subject</p><p className="text-white text-xs">{fu.subject}</p></div>
                 <div className="bg-zinc-900 rounded-lg p-3"><p className="text-zinc-500 text-xs mb-1">Body</p><p className="text-zinc-300 text-xs whitespace-pre-wrap leading-relaxed">{fu.body}</p></div>
                 <button onClick={()=>sendFU(lead)} disabled={sending===lead.id} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold py-2 rounded-lg">
-                  {sending===lead.id?"⏳ Sending...":canAutoSend?"🚀 Send Now":"📧 Open Gmail"}
+                  {sending===lead.id?"... Sending...":canAutoSend?" Send Now":" Open Gmail"}
                 </button>
               </div>
             )}
@@ -735,7 +725,7 @@ function FollowUps({leads,setLeads,auth}) {
           <p className="text-xs text-zinc-500 mb-2 mt-2">Waiting (not due yet)</p>
           {leads.filter(l=>!needsFU.find(n=>n.id===l.id)&&!["ignored","closed"].includes(l.status)).map(lead=>(
             <div key={lead.id} className="bg-zinc-800/40 border border-zinc-700 rounded-xl p-3 mb-2 flex items-center justify-between">
-              <div><p className="text-white text-sm">{lead.name}</p><p className="text-zinc-500 text-xs">{(lead.followUps||[]).length} follow-ups · {getDays(lead.sentAt)}d ago</p></div>
+              <div><p className="text-white text-sm">{lead.name}</p><p className="text-zinc-500 text-xs">{(lead.followUps||[]).length} follow-ups - {getDays(lead.sentAt)}d ago</p></div>
               <Tag color="gray">Waiting</Tag>
             </div>
           ))}
@@ -766,28 +756,26 @@ function Settings({auth,setAuth,leads,setLeads}) {
         <Inp label="Demo Website URL" value={form.demoUrl||""} onChange={up("demoUrl")} placeholder="https://akashprismstudiodemo.netlify.app" hint="This link appears in every email you send to clients"/>
       </Box>
 
-      <Box title="Gemini API Key (Free AI)">
-        <Inp label="Gemini API Key" value={form.apiKey||""} onChange={up("apiKey")} placeholder="Paste your Gemini key here..." type="password" hint="🔒 In browser only — get free key from aistudio.google.com"/>
-      </Box>
+
 
       <Box title="Email Auto-Send (Resend)">
         <div className={`flex items-center gap-2 rounded-lg px-3 py-2 border ${autoSendReady?"bg-emerald-900/20 border-emerald-700":"bg-zinc-900 border-zinc-700"}`}>
-          <span>{autoSendReady?"✅":"⚠️"}</span>
+          <span>{autoSendReady?"":"!"}</span>
           <p className="text-xs text-zinc-400">{autoSendReady?"Auto-send is active! Emails go from your domain.":"Add Resend key and From Email to enable auto-send."}</p>
         </div>
-        <Inp label="Resend API Key" value={form.resendKey||""} onChange={up("resendKey")} placeholder="re_xxxxxxxxxxxxxxxxx" type="password" hint="resend.com → API Keys"/>
+        <Inp label="Resend API Key" value={form.resendKey||""} onChange={up("resendKey")} placeholder="re_xxxxxxxxxxxxxxxxx" type="password" hint="resend.com -> API Keys"/>
         <Inp label="From Email" value={form.fromEmail||""} onChange={up("fromEmail")} placeholder="Akash Prism Studio <akash@clicknestonline.in>" hint="Must be verified domain in Resend"/>
       </Box>
 
       <Box title="Data & Storage">
         <div className="flex items-center justify-between">
-          <div><p className="text-white text-sm">{leads.length} leads saved</p><p className="text-zinc-500 text-xs">Stored in browser — stays after refresh</p></div>
+          <div><p className="text-white text-sm">{leads.length} leads saved</p><p className="text-zinc-500 text-xs">Stored in browser - stays after refresh</p></div>
           <button onClick={clearLeads} className="text-red-400 text-xs border border-red-800 hover:border-red-600 px-3 py-1.5 rounded-lg transition-colors">Clear All</button>
         </div>
       </Box>
 
       <button onClick={save} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-        {saved?"✅ Settings Saved!":"Save Changes"}
+        {saved?" Settings Saved!":"Save Changes"}
       </button>
       <button onClick={()=>{if(window.confirm("Log out? Your leads will stay saved.")){store.auth.set(null);localStorage.removeItem("op_auth");window.location.reload();}}}
         className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-medium py-2.5 rounded-xl text-sm transition-colors">
@@ -821,12 +809,12 @@ export default function App() {
 
   if(!ready) return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-      <div className="text-orange-500 text-4xl animate-pulse">⚡</div>
+      <div className="text-orange-500 text-4xl animate-pulse"></div>
     </div>
   );
   if(!auth) return <Onboarding onActivate={a=>{setAuth(a);store.auth.set(a);}}/>;
 
-  const icons=["📨","✍️","📊","⏰","⚙️"];
+  const icons=["","","","",""];
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white pb-8" style={{fontFamily:"'DM Sans',sans-serif"}}>
@@ -835,10 +823,10 @@ export default function App() {
       {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 sticky top-0 z-10">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-sm font-bold shadow-md shadow-orange-500/30">⚡</div>
+          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-sm font-bold shadow-md shadow-orange-500/30"></div>
           <div className="flex-1 min-w-0">
             <h1 className="font-bold text-white text-base leading-tight">OutreachPro</h1>
-            <p className="text-zinc-500 text-xs truncate">{auth.senderName} · {auth.senderCity}</p>
+            <p className="text-zinc-500 text-xs truncate">{auth.senderName} - {auth.senderCity}</p>
           </div>
           <div className="text-right shrink-0">
             <div className="text-white font-bold text-sm">{leads.length}</div>
