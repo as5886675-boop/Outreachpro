@@ -63,11 +63,15 @@ Date().toDateString();localStorage.setItem(k,(parseInt(localStorage.getItem(k)||
 // GEMINI AI
 
 async function callAI(messages, auth) {
- if(!auth.apiKey) throw new Error("No Gemini API key. Add it in Settings.");
- const contents = messages.map(m=>({
- role: m.role==="assistant"?"model":"user",
- parts:[{text:m.content}]
- }));
+  const r = await fetch("https://outreachpro-backend.vercel.app/api/claude", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages })
+  });
+  const data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
  const r = await fetch(
  `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-
 flash:generateContent?key=${auth.apiKey}`,
