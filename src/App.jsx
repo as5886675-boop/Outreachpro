@@ -6,7 +6,7 @@ const APP_VERSION = "7.0.0";
 const TABS = ["Send","Compose","Tracker","Follow-ups","Settings"];
 const MAX_LEADS_PER_BATCH = 20;
 
-// ── BUSINESS TYPES ────────────────────────────────────────────────────────────
+//  BUSINESS TYPES 
 const BUSINESS_TYPES = [
   { value:"clinic",      label:"Clinic / Hospital" },
   { value:"restaurant",  label:"Restaurant / Dhaba" },
@@ -54,7 +54,7 @@ function getTemplate(type) {
   return TEMPLATES[type] || TEMPLATES.default;
 }
 
-// ── STORAGE ───────────────────────────────────────────────────────────────────
+//  STORAGE 
 const store = {
   auth:  { get:()=>{try{const d=localStorage.getItem("op_auth");return d?JSON.parse(d):null}catch{return null}}, set:v=>{try{localStorage.setItem("op_auth",JSON.stringify(v))}catch{}} },
   leads: { get:()=>{try{const d=localStorage.getItem("op_leads");return d?JSON.parse(d):[]}catch{return[]}}, set:v=>{try{localStorage.setItem("op_leads",JSON.stringify(v))}catch{}} },
@@ -76,7 +76,7 @@ async function callAI(messages) {
   return data;
 }
 
-// ── EMAIL SENDER ──────────────────────────────────────────────────────────────
+//  EMAIL SENDER 
 async function sendViaResend(auth, toEmail, subject, body) {
   const r = await fetch(SEND_URL,{
     method:"POST",
@@ -101,7 +101,7 @@ function parseJSON(data) {
   return JSON.parse(clean);
 }
 
-// ── SHARED UI ─────────────────────────────────────────────────────────────────
+//  SHARED UI 
 function Tag({children,color="gray"}) {
   const c={green:"bg-emerald-900/40 text-emerald-400 border-emerald-700",yellow:"bg-amber-900/40 text-amber-400 border-amber-700",blue:"bg-blue-900/40 text-blue-400 border-blue-700",orange:"bg-orange-900/40 text-orange-400 border-orange-700",red:"bg-red-900/40 text-red-400 border-red-700",gray:"bg-zinc-800 text-zinc-400 border-zinc-600"};
   return <span className={`text-xs px-2 py-0.5 rounded border ${c[color]}`}>{children}</span>;
@@ -131,7 +131,7 @@ function Box({title,children}) {
   );
 }
 
-// ── ONBOARDING ────────────────────────────────────────────────────────────────
+//  ONBOARDING 
 function Onboarding({onActivate}) {
   const [step,setStep]=useState(0);
   const [f,setF]=useState({senderName:"",senderCity:"",demoUrl:"",resendKey:"",fromEmail:""});
@@ -225,7 +225,7 @@ function Onboarding({onActivate}) {
   );
 }
 
-// ── SEND EMAILS ───────────────────────────────────────────────────────────────
+//  SEND EMAILS 
 function SendEmails({auth,setLeads}) {
   const [city,setCity]=useState("");
   const [type,setType]=useState("any");
@@ -503,7 +503,7 @@ function SendEmails({auth,setLeads}) {
   );
 }
 
-// ── COMPOSE ───────────────────────────────────────────────────────────────────
+//  COMPOSE 
 function ComposeEmail({leads,setLeads,auth}) {
   const [biz,setBiz]=useState({name:"",type:"any",city:"",email:"",notes:""});
   const [email,setEmail]=useState({subject:"",body:""});
@@ -586,7 +586,7 @@ function ComposeEmail({leads,setLeads,auth}) {
   );
 }
 
-// ── TRACKER ───────────────────────────────────────────────────────────────────
+//  TRACKER 
 function Tracker({leads,setLeads}) {
   const [filter,setFilter]=useState("all");
   const statuses=["sent","replied","interested","ignored","closed"];
@@ -650,7 +650,7 @@ function Tracker({leads,setLeads}) {
   );
 }
 
-// ── FOLLOW-UPS ─────────────────────────────────────────────────────────────────
+//  FOLLOW-UPS 
 function FollowUps({leads,setLeads,auth}) {
   const [generating,setGenerating]=useState(null);
   const [fuTexts,setFuTexts]=useState({});
@@ -745,7 +745,7 @@ function FollowUps({leads,setLeads,auth}) {
   );
 }
 
-// ── SETTINGS ──────────────────────────────────────────────────────────────────
+//  SETTINGS 
 function Settings({auth,setAuth,leads,setLeads}) {
   const [form,setForm]=useState({...auth});
   const [saved,setSaved]=useState(false);
@@ -798,7 +798,7 @@ function Settings({auth,setAuth,leads,setLeads}) {
   );
 }
 
-// ── MAIN APP ──────────────────────────────────────────────────────────────────
+//  MAIN APP 
 export default function App() {
   const [auth,setAuth]=useState(null);
   const [activeTab,setActiveTab]=useState(0);
