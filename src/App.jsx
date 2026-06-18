@@ -1,863 +1,833 @@
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 
-const BACKEND_URL = "https://outreachpro-backend.vercel.app";
-const SEND_URL    = `${BACKEND_URL}/api/send-email`;
-const APP_VERSION = "7.0.0";
-const TABS = ["Send","Compose","Tracker","Follow-ups","Settings"];
-const MAX_LEADS_PER_BATCH = 20;
+// ════════════════════════════════════════════════════════════════
+//  CONSTANTS & CONFIG
+// ════════════════════════════════════════════════════════════════
+const CORS_PROXY = "https://api.allorigins.win/get?url=";
+const CORS_PROXY_FALLBACK = "https://corsproxy.io/?url=";
 
-//  BUSINESS TYPES 
-const BUSINESS_TYPES = [
-  { value:"clinic",      label:"Clinic / Hospital" },
-  { value:"restaurant",  label:"Restaurant / Dhaba" },
-  { value:"school",      label:"School / Coaching" },
-  { value:"gym",         label:"Gym / Fitness" },
-  { value:"salon",       label:"Salon / Parlour" },
-  { value:"shop",        label:"Shop / Retail Store" },
-  { value:"hotel",       label:"Hotel / Guest House" },
-  { value:"lawyer",      label:"Lawyer / CA" },
-  { value:"any",         label:"Any Business" },
+const OSM_CATEGORY_MAP = {
+  "restaurants":"restaurant","restaurant":"restaurant","cafe":"cafe","cafes":"cafe",
+  "hotels":"hotel","hotel":"hotel","gyms":"gym","gym":"gym","fitness":"gym",
+  "hospitals":"hospital","hospital":"hospital","clinics":"clinic","clinic":"clinic",
+  "dental":"dentist","dentist":"dentist","pharmacy":"pharmacy","pharmacies":"pharmacy",
+  "schools":"school","school":"school","salons":"hairdresser","salon":"hairdresser",
+  "beauty parlour":"beauty","beauty":"beauty","shops":"shop","store":"shop",
+  "supermarket":"supermarket","bakery":"bakery","bakeries":"bakery",
+  "real estate":"real_estate_agent","insurance":"insurance","bank":"bank","banks":"bank",
+};
+
+const SERVICE_PRESETS = [
+  { label:"Digital Marketing Agency", icon:"📈", serviceName:"Digital Marketing Agency", serviceDesc:"We help businesses grow online through performance marketing, paid ads, content strategy, and brand building across all digital channels.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"₹15,000/month", usp:"ROI-focused campaigns, monthly performance reports, dedicated account manager", tone:"professional" },
+  { label:"SEO Agency", icon:"🔎", serviceName:"SEO Agency", serviceDesc:"We help businesses rank on the first page of Google and drive consistent organic traffic through technical SEO, content, and link building.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"₹8,000/month", usp:"Guaranteed first-page rankings, local SEO, monthly audit reports", tone:"professional" },
+  { label:"Social Media Marketing Agency", icon:"💹", serviceName:"Social Media Marketing Agency", serviceDesc:"We manage and grow your brand on Instagram, Facebook, LinkedIn and YouTube with viral content, reels, and targeted paid campaigns.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"₹7,000/month", usp:"Daily content creation, real follower growth, weekly analytics", tone:"casual" },
+  { label:"AI Automation Agency", icon:"🤖", serviceName:"AI Automation Agency", serviceDesc:"We automate repetitive business tasks using AI — from lead generation and customer support to workflow automation and data processing.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"₹20,000", usp:"Save 20+ hours/week, custom AI workflows, no coding needed on your end", tone:"professional" },
+  { label:"Software Development Company", icon:"💻", serviceName:"Software Development Company", serviceDesc:"We build custom software solutions — web apps, SaaS platforms, dashboards, CRMs, and internal tools tailored to your business needs.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"₹30,000", usp:"Agile development, scalable architecture, post-launch support included", tone:"professional" },
+  { label:"Mobile App Development Agency", icon:"📲", serviceName:"Mobile App Development Agency", serviceDesc:"We design and develop high-performance iOS and Android apps for startups and businesses looking to reach customers on mobile.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"₹40,000", usp:"Cross-platform apps, App Store submission, 3 months free support", tone:"professional" },
+  { label:"Recruitment Agency", icon:"🤝", serviceName:"Recruitment Agency", serviceDesc:"We help businesses hire the right talent fast — from sourcing and screening to final placement across all industries and roles.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"₹5,000/hire", usp:"Pre-screened candidates, 30-day replacement guarantee, quick turnaround", tone:"professional" },
+  { label:"Loan Consultant", icon:"🏦", serviceName:"Loan Consultant", serviceDesc:"We help individuals and businesses get the best loan deals — home loans, business loans, personal loans with lowest interest rates.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"Free Consultation", usp:"Best interest rates, fast approval, all banks covered, zero hidden charges", tone:"friendly" },
+  { label:"Real Estate Agency", icon:"🏢", serviceName:"Real Estate Agency", serviceDesc:"We help clients buy, sell, and rent residential and commercial properties with expert market knowledge and end-to-end support.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"Free Consultation", usp:"Best property deals, legal assistance, verified listings, zero brokerage options", tone:"professional" },
+  { label:"Insurance Agent", icon:"🛡️", serviceName:"Insurance Agent", serviceDesc:"We help individuals and businesses find the best insurance plans — health, life, vehicle, and business insurance at the lowest premiums.", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"Free Consultation", usp:"Best premium rates, claim support, all top insurers compared, doorstep service", tone:"friendly" },
+  { label:"Custom (Define Your Own)", icon:"⚡", serviceName:"", serviceDesc:"", sellerName:"", brandName:"", portfolioUrl:"", startingPrice:"", usp:"", tone:"friendly" },
 ];
 
-const TEMPLATES = {
-  default: {
-    subject: n => `Professional Website for ${n} - Get Found Online`,
-    body: (n,c,sender,senderCity,demo) =>
-`Hi,
+const TONE_OPTIONS = [
+  { value:"friendly", label:"Friendly & Warm" },
+  { value:"professional", label:"Professional & Formal" },
+  { value:"casual", label:"Casual & Conversational" },
+  { value:"creative", label:"Creative & Bold" },
+  { value:"urgent", label:"Urgent & Direct" },
+];
 
-I came across ${n} and noticed you don't have a website yet.
-
-Today, most customers search Google before visiting any business. Without a website, you may be losing customers to competitors who are easier to find online.
-
-I built a demo website that shows exactly what yours could look like:
->> ${demo||"https://yourdemo.netlify.app"}
-
-It includes:
-- Mobile-friendly design
-- WhatsApp & contact integration
-- Google Maps & location
-- Services & business information
-- Professional look that builds trust
-
-You pay ONLY after the website is delivered. Zero advance payment.
-
-Would you be open to a quick chat?
-
-Best regards,
-${sender}
-Web Designer | ${senderCity}`,
-  },
-};
-
-// Get template for any business type
-function getTemplate(type) {
-  return TEMPLATES[type] || TEMPLATES.default;
+// ════════════════════════════════════════════════════════════════
+//  OSM SEARCH
+// ════════════════════════════════════════════════════════════════
+async function getCityCoords(city) {
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`, { headers:{"Accept-Language":"en"} });
+  const data = await res.json();
+  if (!data.length) return null;
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
 }
 
-//  STORAGE 
-const store = {
-  auth:  { get:()=>{try{const d=localStorage.getItem("op_auth");return d?JSON.parse(d):null}catch{return null}}, set:v=>{try{localStorage.setItem("op_auth",JSON.stringify(v))}catch{}} },
-  leads: { get:()=>{try{const d=localStorage.getItem("op_leads");return d?JSON.parse(d):[]}catch{return[]}}, set:v=>{try{localStorage.setItem("op_leads",JSON.stringify(v))}catch{}} },
-  daily: {
-    get:()=>{try{return parseInt(localStorage.getItem("op_d_"+new Date().toDateString())||"0")}catch{return 0}},
-    inc:n=>{try{const k="op_d_"+new Date().toDateString();localStorage.setItem(k,(parseInt(localStorage.getItem(k)||"0")+n))}catch{}},
-  },
-};
-
-// AI via Vercel backend (no CORS)
-async function callAI(messages) {
-  const r = await fetch("https://outreachpro-backend.vercel.app/api/claude", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages })
-  });
-  const data = await r.json();
-  if (data.error) throw new Error(data.error);
-  return data;
-}
-
-//  EMAIL SENDER 
-async function sendViaResend(auth, toEmail, subject, body) {
-  const r = await fetch(SEND_URL,{
+async function searchBusinessesOSM(city, category) {
+  const coords = await getCityCoords(city);
+  if (!coords) return [];
+  const radius = 10000;
+  const cat = category.toLowerCase().trim();
+  const osmTag = OSM_CATEGORY_MAP[cat] || cat;
+  const query = `[out:json][timeout:30];(node["amenity"="${osmTag}"](around:${radius},${coords.lat},${coords.lon});node["shop"="${osmTag}"](around:${radius},${coords.lat},${coords.lon});node["amenity"="${cat}"](around:${radius},${coords.lat},${coords.lon});node["shop"="${cat}"](around:${radius},${coords.lat},${coords.lon});node["leisure"="${osmTag}"](around:${radius},${coords.lat},${coords.lon}););out body 40;`;
+  const res = await fetch("https://overpass-api.de/api/interpreter", {
     method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      license_key:"OP-AKASH-TEST-2025",
-      resend_api_key:auth.resendKey,
-      from_email:auth.fromEmail,
-      to_email:toEmail,
-      subject,
-      body
-    })
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:"data=" + encodeURIComponent(query),
   });
-  const d = await r.json();
-  if(!d.success) throw new Error(d.error||"Send failed");
-  return d;
+  const data = await res.json();
+  return data.elements || [];
 }
 
-function parseJSON(data) {
-  const text = data.content.map(i=>i.text||"").join("");
-  const clean = text.replace(/```json|```/g,"").trim();
-  return JSON.parse(clean);
+// ════════════════════════════════════════════════════════════════
+//  WEB CRAWLER — extract emails, phones, social links
+// ════════════════════════════════════════════════════════════════
+// Spam/theme-developer email domains to skip
+const SPAM_EMAIL_DOMAINS = [
+  "wixpress.com","squarespace.com","shopify.com","wordpress.com","godaddy.com",
+  "sentry.io","example.com","test.com","yourdomain.com","domain.com",
+  "micahrich.com","elegantthemes.com","themify.me","themeforest.net",
+  "bootstrapious.com","colorlib.com","templatemo.com","themewagon.com",
+  "wpbeginner.com","yoast.com","elementor.com","w3schools.com","schema.org",
+];
+
+function isSpamEmail(email) {
+  const domain = email.split("@")[1]?.toLowerCase() || "";
+  return SPAM_EMAIL_DOMAINS.some(d => domain.includes(d));
 }
 
-//  SHARED UI 
-function Tag({children,color="gray"}) {
-  const c={green:"bg-emerald-900/40 text-emerald-400 border-emerald-700",yellow:"bg-amber-900/40 text-amber-400 border-amber-700",blue:"bg-blue-900/40 text-blue-400 border-blue-700",orange:"bg-orange-900/40 text-orange-400 border-orange-700",red:"bg-red-900/40 text-red-400 border-red-700",gray:"bg-zinc-800 text-zinc-400 border-zinc-600"};
-  return <span className={`text-xs px-2 py-0.5 rounded border ${c[color]}`}>{children}</span>;
-}
-function Inp({label,value,onChange,placeholder,type="text",hint,rows}) {
-  const cls="w-full bg-zinc-900 border border-zinc-700 focus:border-orange-500 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 outline-none transition-colors";
-  return (
-    <div>
-      {label&&<label className="text-xs text-zinc-400 mb-1 block">{label}</label>}
-      {rows?<textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={rows} className={cls+" resize-none"}/>:<input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} type={type} className={cls}/>}
-      {hint&&<p className="text-zinc-600 text-xs mt-1">{hint}</p>}
-    </div>
-  );
-}
-function Card({children,highlight}) {
-  return <div className={`bg-zinc-800 border rounded-xl p-4 ${highlight?"border-orange-500/40":"border-zinc-700"}`}>{children}</div>;
-}
-function Warn({children}) {
-  return <div className="bg-amber-900/20 border border-amber-700/50 rounded-xl px-4 py-3"><p className="text-amber-400 text-xs">{children}</p></div>;
-}
-function Box({title,children}) {
-  return (
-    <div className="bg-zinc-800/60 border border-zinc-700 rounded-2xl p-4 space-y-3">
-      <p className="text-zinc-500 text-xs uppercase tracking-wider font-semibold border-b border-zinc-700 pb-2">{title}</p>
-      {children}
-    </div>
-  );
+function extractAllContacts(html) {
+  if (!html) return { emails:[], whatsapps:[], phones:[], facebooks:[], instagrams:[], linkedins:[], twitters:[] };
+
+  // ── Emails: from mailto: links first (most reliable), then regex
+  const mailtoRx = /href=["']mailto:([^"'?>\s]+)/gi;
+  const mailtoMatches = [...html.matchAll(mailtoRx)].map(m => m[1].trim().toLowerCase());
+
+  const emailRx = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+  const banned = [".png",".jpg",".jpeg",".gif",".svg",".webp",".css",".js",".woff","sentry","@2x","@3x"];
+  const regexEmails = (html.match(emailRx)||[]).filter(e => {
+    const l = e.toLowerCase();
+    return !banned.some(b=>l.includes(b))
+      && !l.startsWith("noreply") && !l.startsWith("no-reply")
+      && !l.startsWith("support@") && !isSpamEmail(l);
+  });
+
+  // Prioritize mailto: emails, then regex, dedupe
+  const emails = [...new Set([...mailtoMatches, ...regexEmails].map(e=>e.toLowerCase()).filter(e=>e.includes("@") && !isSpamEmail(e)))];
+
+  // ── WhatsApp: wa.me links or whatsapp.com/send
+  const waRx = /https?:\/\/(?:wa\.me|api\.whatsapp\.com\/send|web\.whatsapp\.com\/send)[^\s"'<>]*/gi;
+  const waMatches = html.match(waRx) || [];
+  // Also detect phone numbers in wa.me/XXXXXXX format
+  const waPhoneRx = /wa\.me\/(\d{7,15})/gi;
+  const waPhoneMatches = [...html.matchAll(waPhoneRx)].map(m=>`https://wa.me/${m[1]}`);
+  const whatsapps = [...new Set([...waMatches.map(w=>w.split('"')[0].split("'")[0]), ...waPhoneMatches])];
+
+  // ── Phone numbers: tel: href links + visible phone patterns
+  const telRx = /href=["']tel:([+\d\s\-().]{7,20})["']/gi;
+  const telMatches = [...html.matchAll(telRx)].map(m=>m[1].trim());
+  // Also catch plain Indian mobile patterns: +91-XXXXXXXXXX or 10-digit numbers
+  const indiaPhoneRx = /(?:\+91[-\s]?)?[6-9]\d{9}/g;
+  const indiaPhones = html.match(indiaPhoneRx) || [];
+  const phones = [...new Set([...telMatches, ...indiaPhones])].slice(0,5);
+
+  // ── Facebook: only page-level URLs, skip share/login/policies
+  const fbRx = /https?:\/\/(?:www\.)?facebook\.com\/([a-zA-Z0-9._\-]+)\/?(?:\?[^"'\s<>]*)?/g;
+  const fbSkip = ["sharer","share","dialog","tr","plugins","login","help","legal","privacy","policy","terms","photo","video","watch","marketplace","groups","events","ads","business","pages/create"];
+  const fbMatches = [...html.matchAll(fbRx)]
+    .map(m=>m[0].split("?")[0].replace(/\/$/, ""))
+    .filter(u => !fbSkip.some(s=>u.toLowerCase().includes(s)) && u.split("/").length >= 4 && u.split("/")[3].length > 2);
+  const facebooks = [...new Set(fbMatches)].slice(0,3);
+
+  // ── Instagram: profile URLs only
+  const igRx = /https?:\/\/(?:www\.)?instagram\.com\/([a-zA-Z0-9._]+)\/?/g;
+  const igSkip = ["p","reel","explore","accounts","stories","direct","tv","ar","_u","_n"];
+  const igMatches = [...html.matchAll(igRx)]
+    .map(m=>`https://instagram.com/${m[1]}`)
+    .filter(u => { const seg=u.split("/")[3]; return seg && seg.length>1 && !igSkip.includes(seg); });
+  const instagrams = [...new Set(igMatches)].slice(0,3);
+
+  // ── LinkedIn
+  const liRx = /https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/([a-zA-Z0-9_\-]+)\/?/g;
+  const liMatches = [...html.matchAll(liRx)].map(m=>m[0].split("?")[0].replace(/\/$/,""));
+  const linkedins = [...new Set(liMatches)].slice(0,2);
+
+  // ── Twitter / X
+  const twRx = /https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/([a-zA-Z0-9_]+)\/?/g;
+  const twSkip = ["intent","share","home","search","i","hashtag"];
+  const twMatches = [...html.matchAll(twRx)]
+    .map(m=>m[0].split("?")[0].replace(/\/$/,""))
+    .filter(u => { const seg=u.split("/").pop(); return seg && !twSkip.includes(seg.toLowerCase()); });
+  const twitters = [...new Set(twMatches)].slice(0,2);
+
+  return { emails, whatsapps, phones, facebooks, instagrams, linkedins, twitters };
 }
 
-//  ONBOARDING 
-function Onboarding({onActivate}) {
-  const [step,setStep]=useState(0);
-  const [f,setF]=useState({senderName:"",senderCity:"",demoUrl:"",resendKey:"",fromEmail:""});
-  const up=k=>v=>setF(p=>({...p,[k]:v}));
-  const [loading,setLoading]=useState(false);
-  const [error,setError]=useState("");
+async function fetchPage(url) {
+  // Try primary proxy first
+  try {
+    const res = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`);
+    if (res.ok) {
+      const data = await res.json();
+      const html = data.contents || "";
+      if (html.length > 300) return html; // got real content
+    }
+  } catch (_) {}
 
-  const activate=()=>{
-    if(!f.senderName.trim()){setError("Enter your name.");return;}
-    if(!f.senderCity.trim()){setError("Enter your city.");return;}
-    if(!f.resendKey||!f.resendKey.startsWith("re_")){setError("Enter your Resend API key (starts with re_)");return;}
-    if(!f.fromEmail||!f.fromEmail.includes("@")){setError("Enter your from email.");return;}
-    onActivate({...f,mode:"local"});
+  // Fallback proxy if primary failed or returned suspiciously thin content
+  try {
+    const res2 = await fetch(`${CORS_PROXY_FALLBACK}${encodeURIComponent(url)}`);
+    if (res2.ok) {
+      const html2 = await res2.text();
+      if (html2 && html2.length > 300) return html2;
+    }
+  } catch (_) {}
+
+  return "";
+}
+
+async function crawlWebsite(url) {
+  const results = { emails:[], whatsapps:[], phones:[], facebooks:[], instagrams:[], linkedins:[], twitters:[], crawlStatus:"" };
+  if (!url) { results.crawlStatus = "No website"; return results; }
+
+  let origin;
+  try { origin = new URL(url).origin; } catch { results.crawlStatus = "Invalid URL"; return results; }
+
+  // Pages to crawl in priority order
+  const pagesToCrawl = [
+    url,
+    `${origin}/contact`,
+    `${origin}/contact-us`,
+    `${origin}/contact.html`,
+    `${origin}/about`,
+    `${origin}/about-us`,
+    `${origin}/reach-us`,
+    `${origin}/get-in-touch`,
+  ];
+
+  let crawledCount = 0;
+  const merge = (found) => {
+    found.emails.forEach(e => !results.emails.includes(e) && results.emails.push(e));
+    found.whatsapps.forEach(w => !results.whatsapps.includes(w) && results.whatsapps.push(w));
+    found.phones.forEach(p => !results.phones.includes(p) && results.phones.push(p));
+    found.facebooks.forEach(f => !results.facebooks.includes(f) && results.facebooks.push(f));
+    found.instagrams.forEach(i => !results.instagrams.includes(i) && results.instagrams.push(i));
+    found.linkedins.forEach(l => !results.linkedins.includes(l) && results.linkedins.push(l));
+    found.twitters.forEach(t => !results.twitters.includes(t) && results.twitters.push(t));
   };
 
-  if(step===0) return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-4 py-10">
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-      <div className="w-full max-w-sm space-y-5">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-3xl font-bold text-white mx-auto mb-4 shadow-lg shadow-orange-500/20"></div>
-          <h1 className="text-2xl font-bold text-white">OutreachPro</h1>
-          <p className="text-zinc-400 text-sm mt-1">AI cold email system for web designers</p>
-        </div>
-        <div className="space-y-2">
-          {[
-            ["","AI generates leads for ANY business type"],
-            ["","Auto-sends from akash@clicknestonline.in"],
-            ["","Tracks all leads and replies"],
-            ["","Auto follow-ups at 2, 5, 10 days"],
-          ].map(([icon,text])=>(
-            <div key={text} className="flex items-center gap-3 bg-zinc-800/60 border border-zinc-700 rounded-xl px-4 py-3">
-              <span className="text-xl">{icon}</span><p className="text-zinc-300 text-sm">{text}</p>
-            </div>
-          ))}
-        </div>
-        <button onClick={()=>setStep(1)} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-          Get Started -&gt;
-        </button>
-        <p className="text-zinc-700 text-xs text-center">OutreachPro v{APP_VERSION}</p>
-      </div>
-    </div>
-  );
+  for (const page of pagesToCrawl) {
+    const html = await fetchPage(page);
+    if (!html || html.length < 200) continue;
+    crawledCount++;
+    merge(extractAllContacts(html));
+    // Stop early if we found everything
+    if (results.emails.length && results.phones.length && (results.facebooks.length || results.instagrams.length)) break;
+  }
 
+  // If homepage had links to other pages, try to follow /contact link found in HTML
+  if (crawledCount === 1 && !results.emails.length) {
+    const homepageHtml = await fetchPage(url);
+    const contactLinkRx = /href=["']([^"']*contact[^"']*|[^"']*reach[^"']*|[^"']*touch[^"']*)["']/gi;
+    const contactLinks = [...homepageHtml.matchAll(contactLinkRx)]
+      .map(m => { try { return new URL(m[1], origin).href; } catch { return null; } })
+      .filter(Boolean).slice(0, 3);
+    for (const link of contactLinks) {
+      const html = await fetchPage(link);
+      if (html) { crawledCount++; merge(extractAllContacts(html)); }
+    }
+  }
+
+  const totalFound = results.emails.length + results.phones.length + results.facebooks.length + results.instagrams.length + results.whatsapps.length;
+  results.crawlStatus = crawledCount > 0
+    ? `Crawled ${crawledCount}p · ${totalFound} contacts`
+    : "Could not crawl";
+  return results;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  AI VIA GROQ
+// ════════════════════════════════════════════════════════════════
+function buildServiceContext(svc) {
+  return `SELLER INFO:
+- Name: ${svc.sellerName||"the sender"}
+- Brand: ${svc.brandName||""}
+- Service: ${svc.serviceName}
+- Description: ${svc.serviceDesc}
+- Starting price: ${svc.startingPrice||"not specified"}
+- USP: ${svc.usp||""}
+- Portfolio: ${svc.portfolioUrl||"not provided"}
+- Tone: ${svc.tone}`;
+}
+
+async function callGroq(prompt, maxTokens=800) {
+  try {
+    const res = await fetch("http://localhost:3001/api/chat", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ messages:[{role:"user",content:prompt}], max_tokens:maxTokens }),
+    });
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || "";
+  } catch { return ""; }
+}
+
+async function generateOutreachMessage(business, svc) {
+  const contactInfo = [
+    business.email && `Email: ${business.email}`,
+    business.whatsapp && `WhatsApp available`,
+    business.facebook && `Facebook: ${business.facebook}`,
+    business.instagram && `Instagram: ${business.instagram}`,
+  ].filter(Boolean).join(", ");
+
+  return callGroq(`You are writing a cold outreach message on behalf of a service provider.
+
+${buildServiceContext(svc)}
+
+TARGET BUSINESS:
+- Name: ${business.name}
+- Type: ${business.category}
+- Location: ${business.address}
+- Website: ${business.website||"none"}
+- Contact info found: ${contactInfo||"none"}
+
+Write a short, personalized outreach message (email format with subject line).
+- Mention their specific business type
+- Pitch the service clearly with the price
+- Reference their online presence if available
+- Tone: ${svc.tone}
+- Under 150 words
+- No fake placeholders`, 600);
+}
+
+async function generateWhatsAppMessage(business, svc) {
+  return callGroq(`Write a WhatsApp outreach message on behalf of a service provider.
+
+${buildServiceContext(svc)}
+
+Business: ${business.name} (${business.category}), ${business.address}
+
+2-3 sentences max. Mention their business type. Pitch the service + price. End with a question.
+Tone: ${svc.tone}. Sound human, not spammy.`, 250);
+}
+
+async function generateFollowUp(business, original, svc) {
+  return callGroq(`Write a 2-3 sentence follow-up for a business that didn't reply.
+${buildServiceContext(svc)}
+Business: ${business.name} (${business.category})
+Original: ${original.substring(0,200)}
+Polite nudge. Tone: ${svc.tone}`, 250);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CSV EXPORT
+// ════════════════════════════════════════════════════════════════
+function exportCSV(leads) {
+  const headers = ["Name","Category","Phone","Website","Email","WhatsApp","Facebook","Instagram","LinkedIn","Twitter/X","Address","Crawl Status","Email Status","Outreach Status","Notes"];
+  const rows = leads.map(l=>[l.name,l.category,l.phone,l.website,l.email||"",l.whatsapp||"",l.facebook||"",l.instagram||"",l.linkedin||"",l.twitter||"",l.address,l.crawlStatus||"",l.emailStatus,l.outreachStatus||"Not Contacted",l.notes||""]);
+  const csv=[headers,...rows].map(r=>r.map(c=>`"${(c||"").toString().replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`leads-${Date.now()}.csv`; a.click();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  UI HELPERS
+// ════════════════════════════════════════════════════════════════
+const STATUS_COLORS = {
+  "Real Email Found":"#10b981","No Email Found":"#6b7280","Searching...":"#f59e0b","Crawling...":"#f59e0b",
+  "Not Contacted":"#6b7280","Emailed":"#3b82f6","Replied":"#10b981",
+  "Follow-Up Sent":"#8b5cf6","Not Interested":"#ef4444","WhatsApp Sent":"#25D366","Crawled":"#10b981","Could not crawl":"#ef4444",
+};
+function Badge({label}) {
+  const c=STATUS_COLORS[label]||"#6b7280";
+  return <span style={{background:c+"22",color:c,border:`1px solid ${c}44`,borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:600,whiteSpace:"nowrap"}}>{label}</span>;
+}
+
+function Modal({title,content,onClose}) {
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-4 py-10">
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-      <div className="w-full max-w-sm space-y-4">
-        <div className="text-center mb-2">
-          <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-xl font-bold text-white mx-auto mb-2"></div>
-          <h1 className="text-xl font-bold text-white">Setup OutreachPro</h1>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}} onClick={onClose}>
+      <div style={{background:"#1a1d2e",border:"1px solid #2d3154",borderRadius:12,padding:24,maxWidth:660,width:"100%",maxHeight:"82vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h3 style={{margin:0,color:"#e2e8f0",fontSize:15}}>{title}</h3>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:22}}>×</button>
         </div>
-
-        <Box title="Your Profile">
-          <div className="grid grid-cols-2 gap-3">
-            <Inp label="Your Name *" value={f.senderName} onChange={up("senderName")} placeholder="Akash"/>
-            <Inp label="Your City *" value={f.senderCity} onChange={up("senderCity")} placeholder="Jalore"/>
-          </div>
-          <Inp label="Demo Website URL" value={f.demoUrl} onChange={up("demoUrl")} placeholder="https://akashprismstudiodemo.netlify.app" hint="Clients see this in every email. Add later if needed."/>
-        </Box>
-
-
-
-        <Box title="Email Sending (Resend)">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3 space-y-1">
-            <p className="text-zinc-400 text-xs font-semibold">Your domain clicknestonline.in is verified </p>
-            <p className="text-zinc-500 text-xs">Emails sent as: Akash Prism Studio &lt;akash@clicknestonline.in&gt;</p>
-          </div>
-          <Inp label="Resend API Key *" value={f.resendKey} onChange={up("resendKey")} placeholder="re_xxxxxxxxxxxxxxxxx" type="password" hint="resend.com -> API Keys -> your key"/>
-          <Inp label="From Email *" value={f.fromEmail} onChange={up("fromEmail")} placeholder="Akash Prism Studio <akash@clicknestonline.in>"/>
-        </Box>
-
-        {error&&<div className="bg-red-900/20 border border-red-800 rounded-lg px-3 py-2"><p className="text-red-400 text-xs">{error}</p></div>}
-
-        <button onClick={activate} disabled={loading} className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-          {loading?"Activating...":"Activate & Start ->"}
-        </button>
-        <p className="text-zinc-600 text-xs text-center">All keys stored only in your browser</p>
+        <pre style={{color:"#cbd5e1",fontSize:13,whiteSpace:"pre-wrap",lineHeight:1.7,margin:0}}>{content}</pre>
       </div>
     </div>
   );
 }
 
-//  SEND EMAILS 
-function SendEmails({auth,setLeads}) {
-  const [city,setCity]=useState("");
-  const [type,setType]=useState("any");
-  const [count,setCount]=useState(10);
-  const [batchLeads,setBatchLeads]=useState([]);
-  const [step,setStep]=useState("idle");
-  const [sendStatus,setSendStatus]=useState({});
-  const [progress,setProgress]=useState(0);
-  const [totalSent,setTotalSent]=useState(0);
-  const [dailySent,setDailySent]=useState(store.daily.get());
-  const [csvMode,setCsvMode]=useState(false);
-  const [csvText,setCsvText]=useState("");
-  const [genProgress,setGenProgress]=useState(0);
-  const [errorMsg,setErrorMsg]=useState("");
-  const DAILY_LIMIT=100;
-  const canAutoSend=!!(auth.resendKey&&auth.fromEmail);
-  const demoUrl=auth.demoUrl||"https://akashprismstudiodemo.netlify.app";
+function SocialChip({href, label, color}) {
+  if (!href) return null;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:4,background:color+"22",color,border:`1px solid ${color}44`,borderRadius:6,padding:"2px 8px",fontSize:11,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap"}}>
+      {label}
+    </a>
+  );
+}
 
-  const parseCsv=()=>csvText.trim().split("\n").filter(Boolean).map((line,i)=>{
-    const parts=line.split(",").map(s=>s.trim());
-    const name=parts[0]||"Business";
-    const email=parts[1]||"";
-    const c=parts[2]||city;
-    const btype=parts[3]||"any";
-    const tmpl=getTemplate(btype);
-    return {id:`csv_${i}`,name,email,city:c,type:btype,
-      subject:tmpl.subject(name),
-      body:tmpl.body(name,c,auth.senderName,auth.senderCity,demoUrl)};
-  }).filter(l=>l.email.includes("@"));
+// ════════════════════════════════════════════════════════════════
+//  LEAD DETAIL PANEL
+// ════════════════════════════════════════════════════════════════
+function LeadDetail({lead, svc, onClose, onUpdateLead}) {
+  const [generatingMsg, setGeneratingMsg] = useState(false);
+  const [generatingWA, setGeneratingWA] = useState(false);
+  const [generatingFU, setGeneratingFU] = useState(false);
+  const [outreachMsg, setOutreachMsg] = useState(lead.outreachMessage||"");
+  const [waMsg, setWaMsg] = useState(lead.waMessage||"");
+  const [followUp, setFollowUp] = useState(lead.followUp||"");
 
-  const run=async()=>{
-    if(dailySent>=DAILY_LIMIT){alert(`Daily limit of ${DAILY_LIMIT} reached. Try tomorrow.`);return;}
-    setStep("generating");setBatchLeads([]);setSendStatus({});setProgress(0);setGenProgress(0);setErrorMsg("");
-    try{
-      let bizList=[];
-      if(csvMode){
-        bizList=parseCsv();
-        if(!bizList.length){setStep("idle");alert("No valid emails found.\nFormat: Name, email, city, type");return;}
-      } else {
-        const remaining=Math.min(count,100);
-        const batches=Math.ceil(remaining/MAX_LEADS_PER_BATCH);
-        const typeLabel=BUSINESS_TYPES.find(t=>t.value===type)?.label||"businesses";
-        for(let b=0;b<batches;b++){
-          const batchCount=Math.min(MAX_LEADS_PER_BATCH,remaining-(b*MAX_LEADS_PER_BATCH));
-          const data=await callAI([{role:"user",content:`Generate ${batchCount} realistic fictional ${typeLabel} in ${city||"Jalore, Rajasthan, India"} that don't have websites yet. Make them all different small local businesses. Return ONLY a JSON array. Each object must have: name (string), email (realistic gmail address), city (string), type (string), notes (one sentence about the business). No markdown, no explanation, just the JSON array.`}]);
-          const batch=parseJSON(data);
-          bizList=[...bizList,...batch];
-          setGenProgress(Math.round(((b+1)/batches)*100));
-        }
+  const handleGenOutreach = async () => {
+    setGeneratingMsg(true);
+    const msg = await generateOutreachMessage(lead, svc);
+    setOutreachMsg(msg);
+    onUpdateLead(lead.id, { outreachMessage: msg });
+    setGeneratingMsg(false);
+  };
+
+  const handleGenWA = async () => {
+    setGeneratingWA(true);
+    const msg = await generateWhatsAppMessage(lead, svc);
+    setWaMsg(msg);
+    onUpdateLead(lead.id, { waMessage: msg });
+    setGeneratingWA(false);
+  };
+
+  const handleGenFU = async () => {
+    setGeneratingFU(true);
+    const msg = await generateFollowUp(lead, outreachMsg, svc);
+    setFollowUp(msg);
+    onUpdateLead(lead.id, { followUp: msg });
+    setGeneratingFU(false);
+  };
+
+  const openWA = () => {
+    const phone = (lead.phone||"").replace(/\D/g,"");
+    if (!phone && !lead.whatsapp) { alert("No phone number available for WhatsApp."); return; }
+    const waUrl = lead.whatsapp || `https://wa.me/${phone}`;
+    window.open(`${waUrl}?text=${encodeURIComponent(waMsg)}`, "_blank");
+    onUpdateLead(lead.id, { outreachStatus:"WhatsApp Sent" });
+  };
+
+  const S2 = {
+    overlay: {position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20},
+    panel: {background:"#1a1d2e",border:"1px solid #2d3154",borderRadius:14,padding:24,maxWidth:720,width:"100%",maxHeight:"90vh",overflowY:"auto"},
+    section: {marginBottom:20},
+    sectionTitle: {fontSize:11,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10},
+    row: {display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:8},
+    label: {fontSize:12,color:"#64748b",minWidth:90},
+    value: {fontSize:13,color:"#e2e8f0"},
+    textarea: {width:"100%",background:"#0f1117",border:"1px solid #2d3154",borderRadius:8,padding:"10px 12px",color:"#e2e8f0",fontSize:13,outline:"none",resize:"vertical",lineHeight:1.6,minHeight:100,boxSizing:"border-box"},
+    btn: (c="#6366f1")=>({background:c,color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}),
+    btnSm: (c="#6366f1")=>({background:c+"22",color:c,border:`1px solid ${c}44`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,fontWeight:600}),
+  };
+
+  return (
+    <div style={S2.overlay} onClick={onClose}>
+      <div style={S2.panel} onClick={e=>e.stopPropagation()}>
+        {/* Header */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:17,color:"#e2e8f0"}}>{lead.name}</div>
+            <div style={{fontSize:12,color:"#64748b",marginTop:3}}>{lead.category} · {lead.address}</div>
+            <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
+              <Badge label={lead.emailStatus}/>
+              <Badge label={lead.crawlStatus||"Not crawled"}/>
+              <Badge label={lead.outreachStatus}/>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#64748b",cursor:"pointer",fontSize:22}}>×</button>
+        </div>
+
+        {/* Contact Info */}
+        <div style={S2.section}>
+          <div style={S2.sectionTitle}>📋 Contact Information</div>
+          <div style={{background:"#0f1117",borderRadius:10,padding:14,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {[
+              ["🌐 Website", lead.website, lead.website],
+              ["📧 Email", lead.email, lead.email ? `mailto:${lead.email}` : null],
+              ["📞 Phone", lead.phone, null],
+              ["💬 WhatsApp", lead.whatsapp ? "Available" : "—", lead.whatsapp],
+              ["📘 Facebook", lead.facebook ? "View Page" : "—", lead.facebook],
+              ["📸 Instagram", lead.instagram ? "View Profile" : "—", lead.instagram],
+              ["💼 LinkedIn", lead.linkedin ? "View Profile" : "—", lead.linkedin],
+              ["✖️ Twitter/X", lead.twitter ? "View Profile" : "—", lead.twitter],
+            ].map(([label, val, href])=>(
+              <div key={label} style={{display:"flex",gap:8,alignItems:"center"}}>
+                <span style={{fontSize:11,color:"#64748b",minWidth:95}}>{label}</span>
+                {href
+                  ? <a href={href} target="_blank" rel="noreferrer" style={{fontSize:12,color:"#38bdf8",textDecoration:"none"}}>{val || href}</a>
+                  : <span style={{fontSize:12,color:val&&val!=="—"?"#e2e8f0":"#374151"}}>{val||"—"}</span>
+                }
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Social quick links */}
+        {(lead.facebook||lead.instagram||lead.linkedin||lead.whatsapp||lead.twitter) && (
+          <div style={{...S2.section,display:"flex",gap:8,flexWrap:"wrap"}}>
+            <SocialChip href={lead.facebook} label="📘 Facebook" color="#3b82f6"/>
+            <SocialChip href={lead.instagram} label="📸 Instagram" color="#e1306c"/>
+            <SocialChip href={lead.linkedin} label="💼 LinkedIn" color="#0a66c2"/>
+            <SocialChip href={lead.twitter} label="✖️ X / Twitter" color="#1d9bf0"/>
+            <SocialChip href={lead.whatsapp} label="💬 WhatsApp" color="#25D366"/>
+          </div>
+        )}
+
+        {/* Outreach Message */}
+        <div style={S2.section}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={S2.sectionTitle}>✉️ Outreach Email</div>
+            <div style={{display:"flex",gap:6}}>
+              <button style={S2.btnSm("#818cf8")} onClick={handleGenOutreach} disabled={generatingMsg}>{generatingMsg?"Generating...":"✨ Generate"}</button>
+              {outreachMsg && <button style={S2.btnSm("#8b5cf6")} onClick={handleGenFU} disabled={generatingFU}>{generatingFU?"...":"↩️ Follow-Up"}</button>}
+              {outreachMsg && <button style={S2.btnSm("#10b981")} onClick={()=>{onUpdateLead(lead.id,{outreachStatus:"Emailed"});alert("Marked as emailed!");}}>✓ Mark Emailed</button>}
+            </div>
+          </div>
+          <textarea style={S2.textarea} value={outreachMsg} onChange={e=>{setOutreachMsg(e.target.value);onUpdateLead(lead.id,{outreachMessage:e.target.value});}} placeholder="Click Generate to create an AI outreach email..." />
+          {followUp && (
+            <>
+              <div style={{...S2.sectionTitle,marginTop:12}}>↩️ Follow-Up</div>
+              <textarea style={{...S2.textarea,minHeight:70}} value={followUp} onChange={e=>setFollowUp(e.target.value)} />
+            </>
+          )}
+        </div>
+
+        {/* WhatsApp Message */}
+        <div style={S2.section}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={S2.sectionTitle}>💬 WhatsApp Message</div>
+            <div style={{display:"flex",gap:6}}>
+              <button style={S2.btnSm("#25D366")} onClick={handleGenWA} disabled={generatingWA}>{generatingWA?"Generating...":"✨ Generate"}</button>
+              {waMsg && <button style={S2.btn("#25D366")} onClick={openWA}>💬 Open WhatsApp</button>}
+            </div>
+          </div>
+          <textarea style={{...S2.textarea,minHeight:80}} value={waMsg} onChange={e=>{setWaMsg(e.target.value);onUpdateLead(lead.id,{waMessage:e.target.value});}} placeholder="Click Generate to create a WhatsApp message..." />
+        </div>
+
+        {/* Notes & Status */}
+        <div style={S2.section}>
+          <div style={S2.sectionTitle}>📝 Notes & Status</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div>
+              <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>Outreach Status</div>
+              <select style={{width:"100%",background:"#0f1117",border:"1px solid #2d3154",borderRadius:8,color:"#e2e8f0",padding:"8px 10px",fontSize:13,cursor:"pointer"}} value={lead.outreachStatus} onChange={e=>onUpdateLead(lead.id,{outreachStatus:e.target.value})}>
+                {["Not Contacted","Emailed","Replied","Follow-Up Sent","Not Interested","WhatsApp Sent"].map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>Notes</div>
+              <input style={{width:"100%",background:"#0f1117",border:"1px solid #2d3154",borderRadius:8,color:"#e2e8f0",padding:"8px 10px",fontSize:13,outline:"none",boxSizing:"border-box"}} value={lead.notes||""} onChange={e=>onUpdateLead(lead.id,{notes:e.target.value})} placeholder="Add notes..." />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MAIN APP
+// ════════════════════════════════════════════════════════════════
+export default function LeadGenPro() {
+  const [tab, setTab] = useState("service");
+  const [city, setCity] = useState("");
+  const [category, setCategory] = useState("");
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [selectedLead, setSelectedLead] = useState(null);
+  const abortRef = useRef(false);
+
+  const [selectedPreset, setSelectedPreset] = useState(0);
+  const [svc, setSvc] = useState({...SERVICE_PRESETS[0]});
+  const svcSaved = useRef({...SERVICE_PRESETS[0]});
+
+  const updateSvc = patch => setSvc(p=>({...p,...patch}));
+  const saveService = () => { svcSaved.current={...svc}; alert("Service profile saved! All AI messages will use this."); };
+  const applyPreset = idx => { setSelectedPreset(idx); setSvc({...SERVICE_PRESETS[idx],sellerName:svc.sellerName,brandName:svc.brandName,portfolioUrl:svc.portfolioUrl}); };
+  const updateLead = (id, patch) => {
+    setLeads(prev => prev.map(l => l.id===id ? {...l,...patch} : l));
+    setSelectedLead(prev => prev?.id===id ? {...prev,...patch} : prev);
+  };
+
+  const runSearch = async () => {
+    if (!city.trim()||!category.trim()) { alert("Enter city and category."); return; }
+    setLoading(true); abortRef.current=false; setLeads([]);
+    setProgress("Finding city coordinates...");
+
+    try {
+      const elements = await searchBusinessesOSM(city, category);
+      if (!elements.length) {
+        setProgress(`No results for "${category}" in ${city}. Try: restaurants, hotels, gyms, clinics, salons, bakeries`);
+        setLoading(false); return;
       }
-      const withEmails=bizList.slice(0,count).map(biz=>{
-        const tmpl=getTemplate(biz.type);
+
+      setProgress(`Found ${elements.length} businesses. Building leads...`);
+      const newLeads = elements.map((el,i) => {
+        const t = el.tags||{};
+        const website = t.website||t["contact:website"]||"";
+        const phone = t.phone||t["contact:phone"]||t["contact:mobile"]||"";
+        const name = t.name||t["name:en"]||`${category} #${i+1}`;
+        const address = [t["addr:housenumber"],t["addr:street"],t["addr:city"]||city].filter(Boolean).join(", ");
+        // Pre-fill from OSM tags
+        const facebook = t["contact:facebook"]||t["facebook"]||"";
+        const instagram = t["contact:instagram"]||t["instagram"]||"";
         return {
-          ...biz,
-          id:Math.random().toString(36).slice(2),
-          subject:tmpl.subject(biz.name),
-          body:tmpl.body(biz.name,biz.city||city,auth.senderName,auth.senderCity,demoUrl)
+          id:`osm_${el.id}`, name, category, phone, website,
+          address:address||city, rating:"",
+          email:"", whatsapp:"", facebook, instagram, linkedin:"", twitter:"",
+          emailStatus: website ? "Pending crawl" : "No website",
+          crawlStatus: website ? "Pending" : "No website",
+          outreachStatus:"Not Contacted", outreachMessage:"", waMessage:"", followUp:"", notes:"",
         };
       });
-      setBatchLeads(withEmails);
-      const s={};withEmails.forEach((_,i)=>s[i]="pending");
-      setSendStatus(s);
-      setStep("previewing");
-    } catch(e) {
-      setErrorMsg("Error: "+e.message);
-      setStep("idle");
-    }
-  };
+      setLeads([...newLeads]);
 
-  const sendAll=async()=>{
-    if(!canAutoSend){alert("Add Resend API key and From Email in Settings to enable auto-send.");return;}
-    setStep("sending");
-    let sent=0;
-    for(let i=0;i<batchLeads.length;i++){
-      if(dailySent+sent>=DAILY_LIMIT){setSendStatus(p=>({...p,[i]:"skipped"}));continue;}
-      const lead=batchLeads[i];
-      setSendStatus(p=>({...p,[i]:"sending"}));
-      try{
-        await sendViaResend(auth,lead.email,lead.subject,lead.body);
-        setSendStatus(p=>({...p,[i]:"sent"}));
-        sent++;
-        setProgress(Math.round(((i+1)/batchLeads.length)*100));
-        setLeads(prev=>{
-          const u=[...prev,{id:Date.now()+i,name:lead.name,email:lead.email,
-            type:lead.type,city:lead.city||city,subject:lead.subject,
-            sentAt:new Date().toISOString(),status:"sent",followUps:[]}];
-          store.leads.set(u);return u;
-        });
-      } catch(e) {
-        setSendStatus(p=>({...p,[i]:"error"}));
+      // Crawl each website
+      for (let i=0; i<newLeads.length; i++) {
+        if (abortRef.current) break;
+        if (!newLeads[i].website) continue;
+        setProgress(`Crawling ${i+1}/${newLeads.length}: ${newLeads[i].name}`);
+        updateLead(newLeads[i].id, { crawlStatus:"Crawling...", emailStatus:"Crawling..." });
+
+        const contacts = await crawlWebsite(newLeads[i].website);
+        const patch = {
+          email: contacts.emails[0]||"",
+          whatsapp: contacts.whatsapps[0]||"",
+          facebook: newLeads[i].facebook || contacts.facebooks[0]||"",
+          instagram: newLeads[i].instagram || contacts.instagrams[0]||"",
+          linkedin: contacts.linkedins[0]||"",
+          twitter: contacts.twitters[0]||"",
+          phone: newLeads[i].phone || contacts.phones[0]||"",
+          emailStatus: contacts.emails.length ? "Real Email Found" : "No Email Found",
+          crawlStatus: contacts.crawlStatus,
+          allEmails: contacts.emails,
+          allPhones: contacts.phones,
+        };
+        newLeads[i] = {...newLeads[i],...patch};
+        setLeads([...newLeads]);
       }
-      if(i<batchLeads.length-1)await new Promise(r=>setTimeout(r,800));
+
+      const emailCount = newLeads.filter(l=>l.email).length;
+      const fbCount = newLeads.filter(l=>l.facebook).length;
+      const igCount = newLeads.filter(l=>l.instagram).length;
+      setProgress(`Done! ${newLeads.length} businesses · ${emailCount} emails · ${fbCount} Facebook · ${igCount} Instagram`);
+    } catch(err) {
+      setProgress("Error: " + err.message);
     }
-    store.daily.inc(sent);
-    setDailySent(store.daily.get());
-    setTotalSent(sent);
-    setStep("done");
-  };
-
-  const openGmailAll=()=>{
-    batchLeads.forEach((lead,i)=>{
-      setTimeout(()=>{
-        window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(lead.email)}&su=${encodeURIComponent(lead.subject)}&body=${encodeURIComponent(lead.body)}`,"_blank");
-      },i*700);
-    });
-    setTimeout(()=>{
-      batchLeads.forEach((_,i)=>setSendStatus(p=>({...p,[i]:"sent"})));
-      batchLeads.forEach((lead,i)=>{
-        setLeads(prev=>{
-          const u=[...prev,{id:Date.now()+i,name:lead.name,email:lead.email,
-            type:lead.type,city:lead.city||city,subject:lead.subject,
-            sentAt:new Date().toISOString(),status:"sent",followUps:[]}];
-          store.leads.set(u);return u;
-        });
-      });
-      store.daily.inc(batchLeads.length);
-      setDailySent(store.daily.get());
-      setTotalSent(batchLeads.length);
-      setStep("done");
-    },batchLeads.length*700+500);
-  };
-
-  const reset=()=>{setStep("idle");setBatchLeads([]);setSendStatus({});setProgress(0);setTotalSent(0);setErrorMsg("");};
-  const icon={pending:"-",sending:"...",sent:"",error:"X",skipped:">>"};
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-white">Email Blast</h2>
-          <p className="text-zinc-400 text-sm mt-0.5">{canAutoSend?" Auto-send ready":"! Add Resend key in Settings"}</p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-white font-bold text-sm">{dailySent}<span className="text-zinc-500 font-normal">/{DAILY_LIMIT}</span></p>
-          <p className="text-zinc-500 text-xs">today</p>
-        </div>
-      </div>
-
-      {dailySent>=DAILY_LIMIT&&<Warn>! Daily limit reached. Resets at midnight.</Warn>}
-      {!auth.demoUrl&&<Warn>! No demo URL set - go to Settings to add it.</Warn>}
-      {errorMsg&&<div className="bg-red-900/20 border border-red-800 rounded-xl px-4 py-3"><p className="text-red-400 text-xs">{errorMsg}</p></div>}
-
-      {(step==="idle"||step==="generating")&&(
-        <>
-          <div className="flex gap-2">
-            <button onClick={()=>setCsvMode(false)} className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${!csvMode?"bg-orange-500 border-orange-500 text-white":"bg-zinc-800 border-zinc-700 text-zinc-400"}`}> AI Generate</button>
-            <button onClick={()=>setCsvMode(true)} className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${csvMode?"bg-orange-500 border-orange-500 text-white":"bg-zinc-800 border-zinc-700 text-zinc-400"}`}> Paste CSV</button>
-          </div>
-
-          {!csvMode?(
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-zinc-400 mb-1 block">Business Type</label>
-                  <select value={type} onChange={e=>setType(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm">
-                    {BUSINESS_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-zinc-400 mb-1 block">City</label>
-                  <input value={city} onChange={e=>setCity(e.target.value)} placeholder="e.g. Jalore" className="w-full bg-zinc-800 border border-zinc-700 focus:border-orange-500 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 outline-none"/>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-zinc-400 mb-1 block">
-                  Number of Leads: <span className="text-orange-400 font-bold">{count}</span>
-                </label>
-                <input type="range" min="5" max="100" step="5" value={count} onChange={e=>setCount(parseInt(e.target.value))} className="w-full accent-orange-500"/>
-                <div className="flex justify-between text-zinc-600 text-xs mt-1"><span>5</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
-                {count>20&&<p className="text-amber-400 text-xs mt-1">! {Math.ceil(count/20)} AI calls needed - takes ~{Math.ceil(count/20)*8}s</p>}
-              </div>
-            </div>
-          ):(
-            <div>
-              <label className="text-xs text-zinc-400 mb-1 block">Paste leads - one per line</label>
-              <textarea value={csvText} onChange={e=>setCsvText(e.target.value)} rows={6}
-                placeholder={"Ekdant Dental, ekdant@gmail.com, Jalore, clinic\nSharma Restaurant, sharma@gmail.com, Jodhpur, restaurant\nRaj Coaching, raj@gmail.com, Barmer, school"}
-                className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm placeholder-zinc-600 outline-none resize-none font-mono"/>
-              <p className="text-zinc-600 text-xs mt-1">Format: Name, email, city, type</p>
-            </div>
-          )}
-
-          <button onClick={run} disabled={step==="generating"||dailySent>=DAILY_LIMIT}
-            className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-            {step==="generating"
-              ?<span className="flex items-center justify-center gap-2"><span className="animate-spin inline-block"></span>{genProgress>0?`Generating... ${genProgress}%`:"Starting AI..."}</span>
-              :` Generate ${count} Leads & Write Emails`}
-          </button>
-        </>
-      )}
-
-      {step==="previewing"&&(
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-white font-semibold">{batchLeads.length} leads ready to send</p>
-            <button onClick={reset} className="text-zinc-500 text-xs hover:text-zinc-300">x Reset</button>
-          </div>
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {batchLeads.map((lead,i)=>(
-              <div key={i} className="bg-zinc-800 border border-zinc-700 rounded-xl p-3 flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{lead.name}</p>
-                  <p className="text-zinc-400 text-xs truncate">{lead.email}</p>
-                  <p className="text-zinc-600 text-xs truncate">{lead.type} - {lead.city}</p>
-                </div>
-                <Tag>ready</Tag>
-              </div>
-            ))}
-          </div>
-          <div className="space-y-2">
-            {canAutoSend&&(
-              <button onClick={sendAll} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-                 Auto-Send All {batchLeads.length} Emails
-              </button>
-            )}
-            <button onClick={openGmailAll} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm">
-               Open Gmail for All {batchLeads.length}
-            </button>
-            {!canAutoSend&&<p className="text-zinc-600 text-xs text-center">Add Resend key in Settings for one-click auto-send.</p>}
-          </div>
-        </div>
-      )}
-
-      {step==="sending"&&(
-        <div className="space-y-4">
-          <Card>
-            <div className="text-center">
-              <div className="text-3xl mb-2 animate-bounce"></div>
-              <p className="text-white font-semibold">Sending emails...</p>
-              <p className="text-zinc-400 text-sm mt-1">{Math.round(progress*batchLeads.length/100)} of {batchLeads.length} sent</p>
-              <div className="mt-3 bg-zinc-700 rounded-full h-2.5"><div className="bg-orange-500 h-2.5 rounded-full transition-all duration-500" style={{width:`${progress}%`}}/></div>
-              <p className="text-zinc-500 text-xs mt-2">{progress}%</p>
-            </div>
-          </Card>
-          <div className="space-y-1.5 max-h-64 overflow-y-auto">
-            {batchLeads.map((lead,i)=>(
-              <div key={i} className="flex items-center gap-2 bg-zinc-800/50 rounded-lg px-3 py-2">
-                <span>{icon[sendStatus[i]]||"-"}</span>
-                <p className="text-white text-xs flex-1 truncate">{lead.name}</p>
-                <p className="text-zinc-500 text-xs truncate max-w-[140px]">{lead.email}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {step==="done"&&(
-        <div className="space-y-4">
-          <Card>
-            <div className="text-center">
-              <div className="text-4xl mb-2"></div>
-              <p className="text-white font-bold text-xl">{totalSent} emails sent!</p>
-              <p className="text-zinc-400 text-sm mt-1">All added to your tracker automatically.</p>
-              <div className="grid grid-cols-3 gap-2 mt-4">
-                <div className="bg-zinc-900 rounded-lg p-3"><p className="text-emerald-400 font-bold text-lg">{totalSent}</p><p className="text-zinc-500 text-xs">Sent</p></div>
-                <div className="bg-zinc-900 rounded-lg p-3"><p className="text-red-400 font-bold text-lg">{batchLeads.filter((_,i)=>sendStatus[i]==="error").length}</p><p className="text-zinc-500 text-xs">Failed</p></div>
-                <div className="bg-zinc-900 rounded-lg p-3"><p className="text-zinc-400 font-bold text-lg">{DAILY_LIMIT-dailySent}</p><p className="text-zinc-500 text-xs">Left today</p></div>
-              </div>
-            </div>
-          </Card>
-          <div className="space-y-1.5 max-h-48 overflow-y-auto">
-            {batchLeads.map((lead,i)=>(
-              <div key={i} className="flex items-center gap-2 bg-zinc-800/50 rounded-lg px-3 py-2">
-                <span>{icon[sendStatus[i]]}</span>
-                <p className="text-white text-xs flex-1 truncate">{lead.name}</p>
-                <p className="text-zinc-500 text-xs truncate max-w-[140px]">{lead.email}</p>
-              </div>
-            ))}
-          </div>
-          <button onClick={run} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-2.5 rounded-xl text-sm"> Generate Another Batch</button>
-          <button onClick={reset} className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-2.5 rounded-xl text-sm"> Start Fresh</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-//  COMPOSE 
-function ComposeEmail({leads,setLeads,auth}) {
-  const [biz,setBiz]=useState({name:"",type:"any",city:"",email:"",notes:""});
-  const [email,setEmail]=useState({subject:"",body:""});
-  const [loading,setLoading]=useState(false);
-  const [status,setStatus]=useState("");
-  const [aiMode,setAiMode]=useState(false);
-  const demoUrl=auth.demoUrl||"https://akashprismstudiodemo.netlify.app";
-
-  const generate=async()=>{
-    const tmpl=getTemplate(biz.type);
-    const base={subject:tmpl.subject(biz.name),body:tmpl.body(biz.name,biz.city,auth.senderName,auth.senderCity,demoUrl)};
-    if(!aiMode){setEmail(base);return;}
-    setLoading(true);
-    try{
-      const data=await callAI([{role:"user",content:`Personalize this cold email for ${biz.name} (${biz.type} business) in ${biz.city}. Notes: ${biz.notes||"none"}. Sender: ${auth.senderName} from ${auth.senderCity}. Keep demo: ${demoUrl}. Keep "pay after delivery" offer. Return ONLY JSON {"subject":"...","body":"..."}. No markdown.\n\nBase subject: ${base.subject}\nBase body: ${base.body}`}]);
-      setEmail(parseJSON(data));
-    } catch{setEmail(base);}
     setLoading(false);
+    setTab("leads");
   };
 
-  const track=()=>{
-    setLeads(p=>{
-      const u=[{id:Date.now(),name:biz.name,email:biz.email,type:biz.type,city:biz.city,
-        subject:email.subject,sentAt:new Date().toISOString(),status:"sent",followUps:[]},...p];
-      store.leads.set(u);return u;
-    });
+  const S = {
+    app:{fontFamily:"'Inter',system-ui,sans-serif",background:"#0f1117",minHeight:"100vh",color:"#e2e8f0"},
+    header:{background:"linear-gradient(135deg,#1a1d2e,#16213e)",borderBottom:"1px solid #2d3154",padding:"18px 28px",display:"flex",alignItems:"center",gap:12},
+    logo:{width:36,height:36,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:800,color:"#fff",flexShrink:0},
+    tabs:{display:"flex",gap:4,padding:"14px 28px 0",borderBottom:"1px solid #1e2340",overflowX:"auto"},
+    tab:(a)=>({padding:"8px 14px",borderRadius:"8px 8px 0 0",cursor:"pointer",fontSize:13,fontWeight:500,whiteSpace:"nowrap",background:a?"#1a1d2e":"transparent",color:a?"#818cf8":"#64748b",border:a?"1px solid #2d3154":"1px solid transparent",borderBottom:a?"1px solid #1a1d2e":"1px solid transparent",marginBottom:-1}),
+    body:{padding:24},
+    card:{background:"#1a1d2e",border:"1px solid #2d3154",borderRadius:12,padding:20,marginBottom:16},
+    label:{fontSize:12,color:"#94a3b8",fontWeight:500,marginBottom:5,display:"block"},
+    input:{width:"100%",background:"#0f1117",border:"1px solid #2d3154",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:14,outline:"none",boxSizing:"border-box"},
+    textarea:{width:"100%",background:"#0f1117",border:"1px solid #2d3154",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:13,outline:"none",boxSizing:"border-box",resize:"vertical",lineHeight:1.6},
+    btn:(c="#6366f1")=>({background:c,color:"#fff",border:"none",borderRadius:8,padding:"9px 16px",cursor:"pointer",fontSize:13,fontWeight:600,display:"inline-flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}),
+    btnSm:(c="#6366f1")=>({background:c+"22",color:c,border:`1px solid ${c}44`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,fontWeight:600}),
+    table:{width:"100%",borderCollapse:"collapse",fontSize:13},
+    th:{textAlign:"left",padding:"10px 12px",color:"#64748b",fontWeight:500,borderBottom:"1px solid #1e2340",whiteSpace:"nowrap"},
+    td:{padding:"10px 12px",borderBottom:"1px solid #1a1d2e",verticalAlign:"middle"},
+    progress:{background:"#1e2340",border:"1px solid #2d3154",borderRadius:8,padding:"10px 14px",color:"#94a3b8",fontSize:13,marginBottom:14},
+    select:{width:"100%",background:"#0f1117",border:"1px solid #2d3154",borderRadius:8,padding:"9px 12px",color:"#e2e8f0",fontSize:14,outline:"none",cursor:"pointer"},
   };
 
-  const sendNow=async()=>{
-    setStatus("sending");
-    try{
-      await sendViaResend(auth,biz.email,email.subject,email.body);
-      track();setStatus("sent");setTimeout(()=>setStatus(""),3000);
-    } catch(e){alert("Send failed: "+e.message);setStatus("");}
+  const stats = {
+    total: leads.length,
+    emails: leads.filter(l=>l.email).length,
+    facebook: leads.filter(l=>l.facebook).length,
+    instagram: leads.filter(l=>l.instagram).length,
+    linkedin: leads.filter(l=>l.linkedin).length,
+    twitter: leads.filter(l=>l.twitter).length,
+    whatsapp: leads.filter(l=>l.whatsapp).length,
+    emailed: leads.filter(l=>l.outreachStatus==="Emailed").length,
+    replied: leads.filter(l=>l.outreachStatus==="Replied").length,
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-white">Single Email</h2>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2"><Inp label="Business Name *" value={biz.name} onChange={v=>setBiz(p=>({...p,name:v}))} placeholder="e.g. Ekdant Dental"/></div>
-        <Inp label="Their Email *" value={biz.email} onChange={v=>setBiz(p=>({...p,email:v}))} placeholder="business@gmail.com"/>
-        <Inp label="City" value={biz.city} onChange={v=>setBiz(p=>({...p,city:v}))} placeholder="Jalore"/>
-        <div>
-          <label className="text-xs text-zinc-400 mb-1 block">Business Type</label>
-          <select value={biz.type} onChange={e=>setBiz(p=>({...p,type:e.target.value}))} className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-lg px-3 py-2 text-sm">
-            {BUSINESS_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-        </div>
-        <Inp label="Notes (for AI)" value={biz.notes} onChange={v=>setBiz(p=>({...p,notes:v}))} placeholder="e.g. family business, 10 years old"/>
-      </div>
-      <div className="flex gap-3">
-        <button onClick={generate} disabled={!biz.name||loading} className="flex-1 bg-orange-500 hover:bg-orange-400 disabled:opacity-40 text-white font-semibold py-2.5 rounded-lg text-sm">
-          {loading?"Generating...":" Generate Email"}
-        </button>
-        <label className="flex items-center gap-2 cursor-pointer" onClick={()=>setAiMode(!aiMode)}>
-          <div className={`w-10 h-5 rounded-full relative transition-colors ${aiMode?"bg-orange-500":"bg-zinc-600"}`}><div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${aiMode?"left-5":"left-0.5"}`}/></div>
-          <span className="text-xs text-zinc-400">AI</span>
-        </label>
-      </div>
-      {email.subject&&(
-        <Card>
-          <div className="space-y-3">
-            <Inp label="Subject" value={email.subject} onChange={v=>setEmail(p=>({...p,subject:v}))}/>
-            <Inp label="Body" value={email.body} onChange={v=>setEmail(p=>({...p,body:v}))} rows={10}/>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={sendNow} disabled={status==="sending"} className="col-span-2 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-bold py-2.5 rounded-lg">
-                {status==="sending"?"... Sending...":status==="sent"?" Sent!":" Send Now"}
-              </button>
-              <button onClick={()=>window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(biz.email)}&su=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(email.body)}`,"_blank")} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2 rounded-lg"> Gmail</button>
-              <button onClick={()=>navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${email.body}`)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold py-2 rounded-lg"> Copy</button>
-              <button onClick={()=>{track();setStatus("tracked");setTimeout(()=>setStatus(""),2000);}} className="col-span-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold py-2 rounded-lg">
-                {status==="tracked"?" Tracked!":" Mark Sent & Track"}
-              </button>
-            </div>
-          </div>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-//  TRACKER 
-function Tracker({leads,setLeads}) {
-  const [filter,setFilter]=useState("all");
-  const statuses=["sent","replied","interested","ignored","closed"];
-  const statusColor={sent:"blue",replied:"green",closed:"green",ignored:"gray",interested:"yellow"};
-  const filtered=filter==="all"?leads:leads.filter(l=>l.status===filter);
-
-  if(!leads.length) return (
-    <div className="text-center py-16 text-zinc-500">
-      <div className="text-5xl mb-3"></div>
-      <p className="text-sm font-medium text-zinc-400">No leads yet</p>
-      <p className="text-xs mt-1">Send emails to start tracking</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Tracker</h2>
-        <span className="text-zinc-500 text-xs">{leads.length} total</span>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        {[["Sent","sent","text-blue-400"],["Interested","interested","text-amber-400"],["Closed","closed","text-emerald-400"]].map(([l,k,c])=>(
-          <button key={k} onClick={()=>setFilter(filter===k?"all":k)} className={`rounded-xl p-3 text-center border transition-colors ${filter===k?"border-orange-500 bg-orange-900/10":"border-zinc-700 bg-zinc-800"}`}>
-            <div className={`text-xl font-bold ${c}`}>{leads.filter(x=>x.status===k).length}</div>
-            <div className="text-xs text-zinc-500">{l}</div>
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-1.5 flex-wrap">
-        {["all",...statuses].map(s=>(
-          <button key={s} onClick={()=>setFilter(s)} className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${filter===s?"bg-orange-500 border-orange-500 text-white":"bg-zinc-800 border-zinc-700 text-zinc-400"}`}>{s}</button>
-        ))}
-      </div>
-      <div className="space-y-2">
-        {filtered.map(lead=>(
-          <Card key={lead.id}>
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-white text-sm">{lead.name}</span>
-                  <Tag color={statusColor[lead.status]||"gray"}>{lead.status}</Tag>
-                </div>
-                <p className="text-zinc-400 text-xs mt-0.5 truncate">{lead.email}</p>
-                <p className="text-zinc-600 text-xs">{new Date(lead.sentAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})} - {lead.type} - {(lead.followUps||[]).length} follow-ups</p>
-              </div>
-              <button onClick={()=>{setLeads(p=>{const u=p.filter(l=>l.id!==lead.id);store.leads.set(u);return u;})}} className="text-zinc-600 hover:text-red-400 text-xs shrink-0">x</button>
-            </div>
-            <div className="flex gap-1.5 mt-3 flex-wrap">
-              {statuses.map(s=>(
-                <button key={s} onClick={()=>setLeads(p=>{const u=p.map(l=>l.id===lead.id?{...l,status:s}:l);store.leads.set(u);return u;})}
-                  className={`text-xs px-2 py-1 rounded-md border transition-colors ${lead.status===s?"bg-orange-500 border-orange-500 text-white":"bg-zinc-900 border-zinc-600 text-zinc-400"}`}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </Card>
-        ))}
-        {!filtered.length&&<p className="text-zinc-600 text-sm text-center py-4">No leads with "{filter}" status</p>}
-      </div>
-    </div>
-  );
-}
-
-//  FOLLOW-UPS 
-function FollowUps({leads,setLeads,auth}) {
-  const [generating,setGenerating]=useState(null);
-  const [fuTexts,setFuTexts]=useState({});
-  const [sending,setSending]=useState(null);
-  const demoUrl=auth.demoUrl||"https://akashprismstudiodemo.netlify.app";
-  const getDays=d=>Math.floor((Date.now()-new Date(d).getTime())/86400000);
-  const canAutoSend=!!(auth.resendKey&&auth.fromEmail);
-
-  const needsFU=leads.filter(l=>{
-    if(["ignored","closed"].includes(l.status))return false;
-    const d=getDays(l.sentAt),fc=(l.followUps||[]).length;
-    return(fc===0&&d>=2)||(fc===1&&d>=5)||(fc===2&&d>=10);
-  });
-
-  const generate=async lead=>{
-    setGenerating(lead.id);
-    const fuNum=(lead.followUps||[]).length+1;
-    try{
-      const data=await callAI([{role:"user",content:`Write follow-up email #${fuNum} from ${auth.senderName} (web designer from ${auth.senderCity}) to ${lead.name} (${lead.type||"business"} in ${lead.city||"India"}) about building their website. Be brief, friendly, not pushy. Mention you sent an email earlier. Include demo: ${demoUrl}. Mention pay after delivery. Return ONLY JSON {"subject":"...","body":"..."}. No markdown.`}]);
-      setFuTexts(p=>({...p,[lead.id]:parseJSON(data)}));
-    } catch(e){alert("Failed to generate: "+e.message);}
-    setGenerating(null);
-  };
-
-  const sendFU=async lead=>{
-    const fu=fuTexts[lead.id];if(!fu)return;
-    setSending(lead.id);
-    try{
-      if(canAutoSend){await sendViaResend(auth,lead.email,fu.subject,fu.body);}
-      else{window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(lead.email)}&su=${encodeURIComponent(fu.subject)}&body=${encodeURIComponent(fu.body)}`,"_blank");}
-      setLeads(p=>{const u=p.map(l=>l.id===lead.id?{...l,followUps:[...(l.followUps||[]),{sentAt:new Date().toISOString()}]}:l);store.leads.set(u);return u;});
-      setFuTexts(p=>{const n={...p};delete n[lead.id];return n;});
-    } catch(e){alert("Send failed: "+e.message);}
-    setSending(null);
-  };
-
-  if(!leads.length) return (
-    <div className="text-center py-16 text-zinc-500">
-      <div className="text-5xl mb-3"></div>
-      <p className="text-sm font-medium text-zinc-400">No leads yet</p>
-      <p className="text-xs mt-1">Follow-up reminders appear at 2, 5, and 10 days.</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Follow-ups</h2>
-        {needsFU.length>0&&<span className="bg-orange-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">{needsFU.length} due</span>}
-      </div>
-      {!needsFU.length&&<Card><p className="text-zinc-400 text-sm text-center"> All caught up!</p><p className="text-zinc-500 text-xs text-center mt-1">Reminders at 2, 5, and 10 days after sending.</p></Card>}
-      {needsFU.map(lead=>{
-        const fu=fuTexts[lead.id];const fuNum=(lead.followUps||[]).length+1;
-        return (
-          <Card key={lead.id} highlight>
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="font-semibold text-white text-sm">{lead.name}</p>
-                <p className="text-zinc-400 text-xs">{lead.email}</p>
-                <p className="text-orange-400 text-xs mt-0.5">Follow-up #{fuNum} - {getDays(lead.sentAt)} days ago</p>
-              </div>
-              <Tag color="yellow">Due</Tag>
-            </div>
-            {!fu?(
-              <button onClick={()=>generate(lead)} disabled={generating===lead.id} className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-semibold py-2 rounded-lg">
-                {generating===lead.id?"Writing...":" Generate Follow-up"}
-              </button>
-            ):(
-              <div className="space-y-2">
-                <div className="bg-zinc-900 rounded-lg p-3"><p className="text-zinc-500 text-xs mb-1">Subject</p><p className="text-white text-xs">{fu.subject}</p></div>
-                <div className="bg-zinc-900 rounded-lg p-3"><p className="text-zinc-500 text-xs mb-1">Body</p><p className="text-zinc-300 text-xs whitespace-pre-wrap leading-relaxed">{fu.body}</p></div>
-                <button onClick={()=>sendFU(lead)} disabled={sending===lead.id} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold py-2 rounded-lg">
-                  {sending===lead.id?"... Sending...":canAutoSend?" Send Now":" Open Gmail"}
-                </button>
-              </div>
-            )}
-          </Card>
-        );
-      })}
-      {leads.filter(l=>!needsFU.find(n=>n.id===l.id)&&!["ignored","closed"].includes(l.status)).length>0&&(
-        <div>
-          <p className="text-xs text-zinc-500 mb-2 mt-2">Waiting (not due yet)</p>
-          {leads.filter(l=>!needsFU.find(n=>n.id===l.id)&&!["ignored","closed"].includes(l.status)).map(lead=>(
-            <div key={lead.id} className="bg-zinc-800/40 border border-zinc-700 rounded-xl p-3 mb-2 flex items-center justify-between">
-              <div><p className="text-white text-sm">{lead.name}</p><p className="text-zinc-500 text-xs">{(lead.followUps||[]).length} follow-ups - {getDays(lead.sentAt)}d ago</p></div>
-              <Tag color="gray">Waiting</Tag>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-//  SETTINGS 
-function Settings({auth,setAuth,leads,setLeads}) {
-  const [form,setForm]=useState({...auth});
-  const [saved,setSaved]=useState(false);
-  const up=k=>v=>setForm(p=>({...p,[k]:v}));
-  const save=()=>{setAuth(form);store.auth.set(form);setSaved(true);setTimeout(()=>setSaved(false),2500);};
-  const clearLeads=()=>{if(!window.confirm("Delete ALL leads? This cannot be undone."))return;setLeads([]);store.leads.set([]);};
-  const autoSendReady=!!(form.resendKey&&form.fromEmail);
-
-  return (
-    <div className="space-y-5">
-      <h2 className="text-lg font-semibold text-white">Settings</h2>
-
-      <Box title="Your Profile">
-        <div className="grid grid-cols-2 gap-3">
-          <Inp label="Your Name" value={form.senderName||""} onChange={up("senderName")} placeholder="Akash"/>
-          <Inp label="Your City" value={form.senderCity||""} onChange={up("senderCity")} placeholder="Jalore"/>
-        </div>
-        <Inp label="Demo Website URL" value={form.demoUrl||""} onChange={up("demoUrl")} placeholder="https://akashprismstudiodemo.netlify.app" hint="This link appears in every email you send to clients"/>
-      </Box>
-
-
-
-      <Box title="Email Auto-Send (Resend)">
-        <div className={`flex items-center gap-2 rounded-lg px-3 py-2 border ${autoSendReady?"bg-emerald-900/20 border-emerald-700":"bg-zinc-900 border-zinc-700"}`}>
-          <span>{autoSendReady?"":"!"}</span>
-          <p className="text-xs text-zinc-400">{autoSendReady?"Auto-send is active! Emails go from your domain.":"Add Resend key and From Email to enable auto-send."}</p>
-        </div>
-        <Inp label="Resend API Key" value={form.resendKey||""} onChange={up("resendKey")} placeholder="re_xxxxxxxxxxxxxxxxx" type="password" hint="resend.com -> API Keys"/>
-        <Inp label="From Email" value={form.fromEmail||""} onChange={up("fromEmail")} placeholder="Akash Prism Studio <akash@clicknestonline.in>" hint="Must be verified domain in Resend"/>
-      </Box>
-
-      <Box title="Data & Storage">
-        <div className="flex items-center justify-between">
-          <div><p className="text-white text-sm">{leads.length} leads saved</p><p className="text-zinc-500 text-xs">Stored in browser - stays after refresh</p></div>
-          <button onClick={clearLeads} className="text-red-400 text-xs border border-red-800 hover:border-red-600 px-3 py-1.5 rounded-lg transition-colors">Clear All</button>
-        </div>
-      </Box>
-
-      <button onClick={save} className="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-orange-500/20">
-        {saved?" Settings Saved!":"Save Changes"}
-      </button>
-      <button onClick={()=>{if(window.confirm("Log out? Your leads will stay saved.")){store.auth.set(null);localStorage.removeItem("op_auth");window.location.reload();}}}
-        className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-medium py-2.5 rounded-xl text-sm transition-colors">
-        Log Out
-      </button>
-      <p className="text-zinc-700 text-xs text-center pb-4">OutreachPro v{APP_VERSION}</p>
-    </div>
-  );
-}
-
-//  MAIN APP 
-export default function App() {
-  const [auth,setAuth]=useState(null);
-  const [activeTab,setActiveTab]=useState(0);
-  const [leads,setLeads]=useState([]);
-  const [ready,setReady]=useState(false);
-
-  useEffect(()=>{
-    const a=store.auth.get();
-    const l=store.leads.get();
-    if(a)setAuth(a);
-    if(l&&l.length)setLeads(l);
-    setReady(true);
-  },[]);
-
-  const followUpsDue=leads.filter(l=>{
-    if(["ignored","closed"].includes(l.status))return false;
-    const d=Math.floor((Date.now()-new Date(l.sentAt).getTime())/86400000),fc=(l.followUps||[]).length;
-    return(fc===0&&d>=2)||(fc===1&&d>=5)||(fc===2&&d>=10);
-  }).length;
-
-  if(!ready) return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-      <div className="text-orange-500 text-4xl animate-pulse"></div>
-    </div>
-  );
-  if(!auth) return <Onboarding onActivate={a=>{setAuth(a);store.auth.set(a);}}/>;
-
-  const icons=["","","","",""];
-
-  return (
-    <div className="min-h-screen bg-zinc-950 text-white pb-8" style={{fontFamily:"'DM Sans',sans-serif"}}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <div style={S.app}>
+      {selectedLead && <LeadDetail lead={selectedLead} svc={svcSaved.current} onClose={()=>setSelectedLead(null)} onUpdateLead={updateLead} />}
 
       {/* Header */}
-      <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
-          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-sm font-bold shadow-md shadow-orange-500/30"></div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-white text-base leading-tight">OutreachPro</h1>
-            <p className="text-zinc-500 text-xs truncate">{auth.senderName} - {auth.senderCity}</p>
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-white font-bold text-sm">{leads.length}</div>
-            <div className="text-zinc-600 text-xs">leads</div>
-          </div>
+      <div style={S.header}>
+        <div style={S.logo}>LP</div>
+        <div>
+          <div style={{fontWeight:700,fontSize:16,color:"#e2e8f0"}}>LeadGen Pro</div>
+          <div style={{fontSize:12,color:"#64748b"}}>{svc.serviceName?`Pitching: ${svc.serviceName}`:"Configure your service first"}</div>
+        </div>
+        <div style={{marginLeft:"auto",display:"flex",gap:6,flexWrap:"wrap"}}>
+          {[["✉️",stats.emails,"#10b981"],["📘",stats.facebook,"#3b82f6"],["📸",stats.instagram,"#e1306c"],["💬",stats.whatsapp,"#25D366"],["💼",stats.linkedin,"#0a66c2"]].map(([icon,val,color])=>(
+            <div key={icon} style={{background:color+"22",border:`1px solid ${color}44`,borderRadius:6,padding:"3px 8px",fontSize:12,color}}>{icon} {val}</div>
+          ))}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-zinc-900 border-b border-zinc-800 sticky top-[57px] z-10">
-        <div className="max-w-lg mx-auto flex">
-          {TABS.map((tab,i)=>(
-            <button key={i} onClick={()=>setActiveTab(i)}
-              className={`flex-1 py-2.5 text-xs font-medium transition-colors flex flex-col items-center gap-0.5 relative ${activeTab===i?"text-orange-400 border-b-2 border-orange-400":"text-zinc-500 hover:text-zinc-300"}`}>
-              <span className="text-base leading-none">{icons[i]}</span>
-              <span className="text-[10px]">{tab}</span>
-              {tab==="Follow-ups"&&followUpsDue>0&&(
-                <span className="absolute top-1 right-1 bg-orange-500 text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">{followUpsDue}</span>
-              )}
-            </button>
-          ))}
-        </div>
+      <div style={S.tabs}>
+        {[["service","⚙️ My Service"],["search","🔍 Search"],["leads",`📋 Leads (${leads.length})`],["tracker","📊 Tracker"]].map(([k,l])=>(
+          <button key={k} style={S.tab(tab===k)} onClick={()=>setTab(k)}>{l}</button>
+        ))}
       </div>
 
-      {/* Content */}
-      <div className="max-w-lg mx-auto px-4 pt-5">
-        {activeTab===0&&<SendEmails auth={auth} setLeads={setLeads}/>}
-        {activeTab===1&&<ComposeEmail leads={leads} setLeads={setLeads} auth={auth}/>}
-        {activeTab===2&&<Tracker leads={leads} setLeads={setLeads}/>}
-        {activeTab===3&&<FollowUps leads={leads} setLeads={setLeads} auth={auth}/>}
-        {activeTab===4&&<Settings auth={auth} setAuth={a=>{setAuth(a);store.auth.set(a);}} leads={leads} setLeads={setLeads}/>}
+      <div style={S.body}>
+
+        {/* ── MY SERVICE ── */}
+        {tab==="service" && (
+          <>
+            <div style={S.card}>
+              <div style={{fontWeight:600,marginBottom:14,color:"#e2e8f0"}}>What service do you offer?</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,marginBottom:4}}>
+                {SERVICE_PRESETS.map((p,i)=>(
+                  <button key={i} onClick={()=>applyPreset(i)} style={{background:selectedPreset===i?"#6366f122":"#0f1117",border:selectedPreset===i?"2px solid #6366f1":"1px solid #2d3154",borderRadius:10,padding:"12px 10px",cursor:"pointer",textAlign:"left"}}>
+                    <div style={{fontSize:20,marginBottom:4}}>{p.icon}</div>
+                    <div style={{fontSize:12,fontWeight:600,color:selectedPreset===i?"#818cf8":"#cbd5e1"}}>{p.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={S.card}>
+              <div style={{fontWeight:600,marginBottom:14,color:"#e2e8f0"}}>Your Profile</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+                <div><label style={S.label}>Your Name</label><input style={S.input} placeholder="e.g. Akash Sharma" value={svc.sellerName} onChange={e=>updateSvc({sellerName:e.target.value})} /></div>
+                <div><label style={S.label}>Brand / Studio Name</label><input style={S.input} placeholder="e.g. Akash Prism Studio" value={svc.brandName} onChange={e=>updateSvc({brandName:e.target.value})} /></div>
+                <div><label style={S.label}>Service Name</label><input style={S.input} value={svc.serviceName} onChange={e=>updateSvc({serviceName:e.target.value})} /></div>
+                <div><label style={S.label}>Starting Price</label><input style={S.input} placeholder="e.g. ₹8,000" value={svc.startingPrice} onChange={e=>updateSvc({startingPrice:e.target.value})} /></div>
+                <div><label style={S.label}>Portfolio / Website URL</label><input style={S.input} placeholder="https://yourportfolio.com" value={svc.portfolioUrl} onChange={e=>updateSvc({portfolioUrl:e.target.value})} /></div>
+                <div><label style={S.label}>Message Tone</label><select style={S.select} value={svc.tone} onChange={e=>updateSvc({tone:e.target.value})}>{TONE_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
+              </div>
+              <div style={{marginBottom:14}}><label style={S.label}>Service Description</label><textarea style={{...S.textarea,minHeight:70}} value={svc.serviceDesc} onChange={e=>updateSvc({serviceDesc:e.target.value})} /></div>
+              <div style={{marginBottom:18}}><label style={S.label}>Your USP</label><input style={S.input} placeholder="e.g. 7-day delivery, free revisions, ROI guaranteed" value={svc.usp} onChange={e=>updateSvc({usp:e.target.value})} /></div>
+              <button style={S.btn()} onClick={saveService}>💾 Save Service Profile</button>
+            </div>
+          </>
+        )}
+
+        {/* ── SEARCH ── */}
+        {tab==="search" && (
+          <>
+            <div style={{background:"#052e16",border:"1px solid #16653444",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#4ade80"}}>
+              ✅ <strong>100% Free</strong> — OpenStreetMap + website crawling. No API key needed.
+            </div>
+            <div style={S.card}>
+              <div style={{fontWeight:600,marginBottom:14,color:"#e2e8f0"}}>Search & Crawl Businesses</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+                <div><label style={S.label}>City</label><input style={S.input} placeholder="e.g. Jaipur, Mumbai, Delhi" value={city} onChange={e=>setCity(e.target.value)} /></div>
+                <div><label style={S.label}>Business Category</label><input style={S.input} placeholder="e.g. restaurants, gyms, clinics" value={category} onChange={e=>setCategory(e.target.value)} /></div>
+              </div>
+              <div style={{marginBottom:14,background:"#0f1117",borderRadius:8,padding:"10px 12px",fontSize:12,color:"#64748b"}}>
+                <strong style={{color:"#94a3b8"}}>After search, for each business with a website the crawler will extract:</strong> Email · WhatsApp · Phone · Facebook · Instagram · LinkedIn
+              </div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <button style={S.btn()} onClick={runSearch} disabled={loading}>{loading?"⏳ Crawling...":"🔍 Search & Crawl"}</button>
+                {loading && <button style={S.btn("#ef4444")} onClick={()=>{abortRef.current=true;setLoading(false);}}>⛔ Stop</button>}
+                {leads.length>0 && <button style={S.btn("#10b981")} onClick={()=>exportCSV(leads)}>⬇️ Export CSV</button>}
+              </div>
+            </div>
+            {progress && <div style={S.progress}>{loading&&"⚙️ "}{progress}</div>}
+          </>
+        )}
+
+        {/* ── LEADS ── */}
+        {tab==="leads" && (
+          <>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+              <div style={{fontWeight:600,color:"#e2e8f0"}}>{leads.length} businesses {loading&&<span style={{color:"#f59e0b",fontSize:12}}>· crawling...</span>}</div>
+              {leads.length>0 && <button style={S.btn("#10b981")} onClick={()=>exportCSV(leads)}>⬇️ Export CSV</button>}
+            </div>
+            {progress && loading && <div style={S.progress}>⚙️ {progress}</div>}
+            {leads.length===0 ? (
+              <div style={{...S.card,textAlign:"center",color:"#64748b",padding:48}}>Run a search first.</div>
+            ) : (
+              <div style={{overflowX:"auto"}}>
+                <table style={S.table}>
+                  <thead>
+                    <tr>
+                      {["Business","Phone","✉️ Email","💬 WA","📘 FB","📸 IG","💼 LI","✖️ X","Crawl","Outreach",""].map(h=>(
+                        <th key={h} style={S.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map(lead=>(
+                      <tr key={lead.id} style={{background:lead.email?"#10b98105":"transparent",cursor:"pointer"}} onClick={()=>setSelectedLead(lead)}>
+                        <td style={S.td}>
+                          <div style={{fontWeight:500,color:"#e2e8f0"}}>{lead.name}</div>
+                          <div style={{fontSize:11,color:"#64748b"}}>{lead.address?.split(",").slice(0,2).join(",")}</div>
+                          {lead.website && <a href={lead.website} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{fontSize:11,color:"#38bdf8",textDecoration:"none"}}>🔗 website</a>}
+                        </td>
+                        <td style={S.td}><span style={{color:"#818cf8",fontSize:12}}>{lead.phone||"—"}</span></td>
+                        <td style={S.td}>{lead.email ? <span style={{color:"#10b981",fontSize:11}}>{lead.email}</span> : <span style={{color:"#374151",fontSize:11}}>—</span>}</td>
+                        <td style={S.td}>{lead.whatsapp ? <a href={lead.whatsapp} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#25D366",fontSize:12,textDecoration:"none"}}>✓</a> : <span style={{color:"#374151"}}>—</span>}</td>
+                        <td style={S.td}>{lead.facebook ? <a href={lead.facebook} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#3b82f6",fontSize:12,textDecoration:"none"}}>✓</a> : <span style={{color:"#374151"}}>—</span>}</td>
+                        <td style={S.td}>{lead.instagram ? <a href={lead.instagram} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#e1306c",fontSize:12,textDecoration:"none"}}>✓</a> : <span style={{color:"#374151"}}>—</span>}</td>
+                        <td style={S.td}>{lead.linkedin ? <a href={lead.linkedin} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#0a66c2",fontSize:12,textDecoration:"none"}}>✓</a> : <span style={{color:"#374151"}}>—</span>}</td>
+                        <td style={S.td}>{lead.twitter ? <a href={lead.twitter} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{color:"#1d9bf0",fontSize:12,textDecoration:"none"}}>✓</a> : <span style={{color:"#374151"}}>—</span>}</td>
+                        <td style={S.td}><Badge label={lead.crawlStatus||"Pending"}/></td>
+                        <td style={S.td}><Badge label={lead.outreachStatus}/></td>
+                        <td style={S.td}><button style={{...S.btnSm("#818cf8"),fontSize:11}} onClick={e=>{e.stopPropagation();setSelectedLead(lead);}}>Open →</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── TRACKER ── */}
+        {tab==="tracker" && (
+          <>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:12,marginBottom:20}}>
+              {[
+                ["Total Leads",stats.total,"#818cf8"],
+                ["Emails Found",stats.emails,"#10b981"],
+                ["Facebook",stats.facebook,"#3b82f6"],
+                ["Instagram",stats.instagram,"#e1306c"],
+                ["WhatsApp",stats.whatsapp,"#25D366"],
+                ["LinkedIn",stats.linkedin,"#0a66c2"],
+                ["Twitter/X",stats.twitter,"#1d9bf0"],
+                ["Emailed",stats.emailed,"#3b82f6"],
+                ["Replied",stats.replied,"#10b981"],
+              ].map(([label,val,color])=>(
+                <div key={label} style={{background:"#1a1d2e",border:`1px solid ${color}33`,borderRadius:10,padding:14}}>
+                  <div style={{fontSize:24,fontWeight:700,color}}>{val}</div>
+                  <div style={{fontSize:11,color:"#64748b",marginTop:3}}>{label}</div>
+                </div>
+              ))}
+            </div>
+            {leads.length===0 ? (
+              <div style={{...S.card,textAlign:"center",color:"#64748b",padding:48}}>No leads yet.</div>
+            ) : (
+              <div style={{overflowX:"auto"}}>
+                <table style={S.table}>
+                  <thead><tr>{["Business","Email","Socials","Crawl Status","Outreach","Notes",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {leads.map(lead=>(
+                      <tr key={lead.id}>
+                        <td style={S.td}><div style={{fontWeight:500,color:"#e2e8f0",fontSize:13}}>{lead.name}</div><div style={{fontSize:11,color:"#64748b"}}>{lead.phone}</div></td>
+                        <td style={S.td}><span style={{color:lead.email?"#10b981":"#374151",fontSize:12}}>{lead.email||"—"}</span></td>
+                        <td style={S.td}>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                            {lead.facebook && <SocialChip href={lead.facebook} label="FB" color="#3b82f6"/>}
+                            {lead.instagram && <SocialChip href={lead.instagram} label="IG" color="#e1306c"/>}
+                            {lead.linkedin && <SocialChip href={lead.linkedin} label="LI" color="#0a66c2"/>}
+                            {lead.twitter && <SocialChip href={lead.twitter} label="X" color="#1d9bf0"/>}
+                            {lead.whatsapp && <SocialChip href={lead.whatsapp} label="WA" color="#25D366"/>}
+                            {!lead.facebook&&!lead.instagram&&!lead.linkedin&&!lead.whatsapp&&!lead.twitter && <span style={{color:"#374151",fontSize:12}}>—</span>}
+                          </div>
+                        </td>
+                        <td style={S.td}><Badge label={lead.crawlStatus||"Pending"}/></td>
+                        <td style={S.td}>
+                          <select style={{background:"#0f1117",border:"1px solid #2d3154",borderRadius:6,color:"#e2e8f0",padding:"4px 8px",fontSize:12,cursor:"pointer"}} value={lead.outreachStatus} onChange={e=>updateLead(lead.id,{outreachStatus:e.target.value})}>
+                            {["Not Contacted","Emailed","Replied","Follow-Up Sent","Not Interested","WhatsApp Sent"].map(s=><option key={s}>{s}</option>)}
+                          </select>
+                        </td>
+                        <td style={S.td}><input style={{background:"transparent",border:"1px solid #1e2340",borderRadius:6,color:"#94a3b8",padding:"4px 8px",fontSize:12,width:140,outline:"none"}} value={lead.notes||""} onChange={e=>updateLead(lead.id,{notes:e.target.value})} placeholder="Add note..." /></td>
+                        <td style={S.td}><button style={S.btnSm("#818cf8")} onClick={()=>setSelectedLead(lead)}>Open →</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
       </div>
     </div>
   );
